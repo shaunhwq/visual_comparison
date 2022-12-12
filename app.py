@@ -9,7 +9,7 @@ import customtkinter
 import image_utils
 
 
-class ControlsFrame(customtkinter.CTkFrame):
+class ModeMethodsControllerFrame(customtkinter.CTkFrame):
     def __init__(self, root, methods, files, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.root = root
@@ -24,33 +24,33 @@ class ControlsFrame(customtkinter.CTkFrame):
 
         # For changing selected files & methods
         change_method_file_frame = customtkinter.CTkFrame(master=self)
-        button_prev = customtkinter.CTkButton(master=change_method_file_frame, text="<", command=self.on_prev_clicked, width=30)
+        button_prev = customtkinter.CTkButton(master=change_method_file_frame, text="<", command=self.on_prev, width=30, height=25)
         button_prev.grid(row=0, column=0, padx=5)
-        button_method = customtkinter.CTkButton(master=change_method_file_frame, text="Method:", command=self.on_select_methods_pressed, width=50)
+        button_method = customtkinter.CTkButton(master=change_method_file_frame, text="Method:", command=self.on_select_methods, width=50, height=25)
         button_method.grid(row=0, column=1, padx=5)
-        button_select_specific = customtkinter.CTkButton(master=change_method_file_frame, text="Idx:", command=self.on_specify_index, width=50)
+        button_select_specific = customtkinter.CTkButton(master=change_method_file_frame, text="Idx:", command=self.on_specify_index, width=50, height=25)
         button_select_specific.grid(row=0, column=2, padx=5)
-        button_next = customtkinter.CTkButton(master=change_method_file_frame, text=">", command=self.on_next_clicked, width=30)
+        button_next = customtkinter.CTkButton(master=change_method_file_frame, text=">", command=self.on_next, width=30, height=25)
         button_next.grid(row=0, column=3, padx=5)
-        change_method_file_frame.grid(row=0, column=0, padx=50)
+        change_method_file_frame.grid(row=0, column=0)
         self.current_index = 0
 
         # For controlling modes
         self.modes = ["Compare", "Concat", "Specific"]
-        methods_frame = customtkinter.CTkFrame(master=self)
-        self.s_button_methods = customtkinter.CTkSegmentedButton(master=methods_frame, values=self.modes, command=lambda mode: self.on_change_mode({"mode": mode, "value": self.curr_methods[0]}))
-        self.s_button_methods.pack()
-        methods_frame.grid(row=0, column=1)
+        modes_frame = customtkinter.CTkFrame(master=self)
+        self.s_button_modes = customtkinter.CTkSegmentedButton(master=modes_frame, values=self.modes, command=lambda mode: self.on_change_mode(mode, self.curr_methods[0]))
+        self.s_button_modes.pack()
+        modes_frame.grid(row=0, column=1)
 
         # For changing to 'Specific' mode
-        self.sb_frame = customtkinter.CTkFrame(master=self)
-        self.segmented_button = customtkinter.CTkSegmentedButton(master=self.sb_frame, values=self.curr_methods, command=lambda value: self.on_change_mode({"mode": self.modes[2], "value": value}))
-        self.segmented_button.pack()
+        self.methods_frame = customtkinter.CTkFrame(master=self)
+        self.s_button_methods = customtkinter.CTkSegmentedButton(master=self.methods_frame, values=self.curr_methods, command=lambda value: self.on_change_mode("Specific", value))
+        self.s_button_methods.pack()
 
         self.bind_hotkeys()
 
     def _reset_internal_state(self):
-        self.internal_state = {"mode": "Compare", "value": "None"}
+        self.internal_state = {"mode": "Compare", "method": "None"}
 
     def get_window_title(self):
         title = f"[{self.current_index}/{len(self.files)}] {self.files[self.current_index]}"
@@ -66,28 +66,23 @@ class ControlsFrame(customtkinter.CTkFrame):
 
         return output_paths
 
-    def on_change_mode(self, new_state):
-        mode = new_state["mode"]
+    def on_change_mode(self, mode, method):
         if mode == "Compare":
-            self.segmented_button.set(-1)
-            self.sb_frame.grid_remove()
+            self.methods_frame.grid_remove()
         elif mode == "Concat":
-            self.segmented_button.set(-1)
-            self.sb_frame.grid_remove()
+            self.methods_frame.grid_remove()
         else:
-            if new_state["value"] == self.internal_state["value"] and self.internal_state["mode"] == "Specific":
-                self.segmented_button.set(-1)
-                self.sb_frame.grid_remove()
-                self.s_button_methods.set("Compare")
+            if method == self.internal_state["method"] and self.internal_state["mode"] == "Specific":
+                self.methods_frame.grid_remove()
+                self.s_button_modes.set("Compare")
                 self._reset_internal_state()
                 return
             else:
-                self.s_button_methods.set("Specific")
-                self.segmented_button.set(new_state["value"])
-                self.sb_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
+                self.s_button_modes.set("Specific")
+                self.s_button_methods.set(method)
+                self.methods_frame.grid(row=1, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
 
-        self.internal_state = new_state
-
+        self.internal_state = {"mode": mode, "method": method}
         self.file_updated = True
 
     def on_specify_index(self):
@@ -111,37 +106,37 @@ class ControlsFrame(customtkinter.CTkFrame):
 
         self.file_updated = True
 
-    def on_prev_clicked(self):
+    def on_prev(self):
         self.current_index = max(0, self.current_index - 1)
         self.file_updated = True
 
-    def on_next_clicked(self):
+    def on_next(self):
         self.current_index = min(len(self.files), self.current_index + 1)
         self.file_updated = True
 
-    def on_select_methods_pressed(self):
+    def on_select_methods(self):
         def set_new_methods(new_methods):
             if len(new_methods) < 2:
                 print(f"Please select more than 2 methods")
                 return
             self.curr_methods = new_methods
-            self.s_button_methods.set("Compare")
-            self.segmented_button.set(-1)
+            self.s_button_modes.set("Compare")
+            self.methods_frame.grid_remove()
             self._reset_internal_state()
-            self.segmented_button.configure(values=new_methods, command=lambda value: self.on_change_mode({"mode": self.modes[2], "value": value}))
+            self.s_button_methods.configure(values=new_methods, command=lambda value: self.on_change_mode(self.modes[2], value))
             self.bind_hotkeys()
             self.file_updated = True
 
         MethodsSelectionPopUp(all_methods=self.methods, current_methods=self.curr_methods, app_callback=set_new_methods)
 
     def bind_hotkeys(self):
-        self.master.bind("a", lambda event: self.on_prev_clicked())
-        self.master.bind("d", lambda event: self.on_next_clicked())
+        self.master.bind("a", lambda event: self.on_prev())
+        self.master.bind("d", lambda event: self.on_next())
 
         for i in range(10):
             self.master.unbind(str(i))
         for i in range(len(self.curr_methods)):
-            self.master.bind(str(i + 1), lambda event: self.on_change_mode({"mode": "Specific", "value": self.curr_methods[int(event.keysym) - 1]}))
+            self.master.bind(str(i + 1), lambda event: self.on_change_mode("Specific", self.curr_methods[int(event.keysym) - 1]))
 
 
 class MethodsSelectionPopUp(customtkinter.CTkToplevel):
@@ -176,16 +171,23 @@ class MethodsSelectionPopUp(customtkinter.CTkToplevel):
 
     def _on_checkbox_checked(self):
         new_list = [checkbox for checkbox in self.checkboxes if checkbox.get()]
-        new_list += sorted([checkbox for checkbox in self.checkboxes if not checkbox.get()], key=lambda checkbox: checkbox.cget("text"))
-        for checkbox in new_list: checkbox.pack_forget()
-        for checkbox in new_list: checkbox.pack()
+        remaining = [checkbox for checkbox in self.checkboxes if not checkbox.get()]
+        remaining.sort(key=lambda checkbox: checkbox.cget("text"))
+        new_list += remaining
+        for checkbox in new_list:
+            checkbox.pack_forget()
+        for checkbox in new_list:
+            checkbox.pack()
         self.checkboxes = new_list
 
     def _on_reset_pressed(self):
-        self.checkboxes = sorted(self.checkboxes, key=lambda checkbox: checkbox.cget("text"))
-        for checkbox in self.checkboxes: checkbox.pack_forget()
-        for checkbox in self.checkboxes: checkbox.pack()
-        for checkbox in self.checkboxes: checkbox.deselect()
+        self.checkboxes.sort(key=lambda checkbox: checkbox.cget("text"))
+        for checkbox in self.checkboxes:
+            checkbox.pack_forget()
+        for checkbox in self.checkboxes:
+            checkbox.pack()
+        for checkbox in self.checkboxes:
+            checkbox.deselect()
 
     def _on_ok_pressed(self):
         methods_to_display = [checkbox.cget("text") for checkbox in self.checkboxes if checkbox.get()]
@@ -225,8 +227,8 @@ class ImageComparisonApp(customtkinter.CTk):
         super().__init__()
         # configure window
         methods, files = self.get_comparison_methods_files(root, src_folder_name)
-        self.controls_handler = ControlsFrame(root, methods, files, master=self)
-        self.controls_handler.pack()
+        self.mode_methods_handler = ModeMethodsControllerFrame(root, methods, files, master=self)
+        self.mode_methods_handler.pack()
 
         self.display_handler = DisplayWindowFrame(self)
         self.display_handler.pack()
@@ -257,26 +259,29 @@ class ImageComparisonApp(customtkinter.CTk):
         return methods, common_files
 
     def display(self):
-        if self.controls_handler.file_updated:
-            self.title(self.controls_handler.get_window_title())
+        if self.mode_methods_handler.file_updated:
+            self.title(self.mode_methods_handler.get_window_title())
             self.content_loaders = []
-            for file in self.controls_handler.get_paths():
+            for file in self.mode_methods_handler.get_paths():
                 extension = os.path.splitext(file)[-1]
                 if extension in {".jpg", ".png", ".hdr"}:
                     self.content_loaders.append(ImageCapture(file))
                 else:
                     raise NotImplementedError(f"Ext not supported: {extension} for file {file}")
             self.display_handler.mouse_position = (0, 0)
-            self.controls_handler.file_updated = False
+            self.mode_methods_handler.file_updated = False
 
         images = [cap.read()[1] for cap in self.content_loaders]
 
-        mode = self.controls_handler.internal_state["mode"]
-        method = self.controls_handler.internal_state.get("value", None)
-        current_methods = self.controls_handler.curr_methods
+        mode = self.mode_methods_handler.internal_state["mode"]
+        method = self.mode_methods_handler.internal_state.get("method", None)
+        current_methods = self.mode_methods_handler.curr_methods
 
         if mode == "Compare":
-            title_positions = [image_utils.TextPosition.TOP_LEFT, image_utils.TextPosition.TOP_RIGHT, image_utils.TextPosition.BTM_LEFT, image_utils.TextPosition.BTM_RIGHT]
+            title_positions = [image_utils.TextPosition.TOP_LEFT,
+                               image_utils.TextPosition.TOP_RIGHT,
+                               image_utils.TextPosition.BTM_LEFT,
+                               image_utils.TextPosition.BTM_RIGHT]
         elif mode == "Concat":
             title_positions = [image_utils.TextPosition.TOP_LEFT] * len(current_methods)
         elif mode == "Specific":
@@ -311,7 +316,7 @@ class ImageCapture:
     TODO: Handle HDR Reading too later?
     """
     def __init__(self, image_path):
-        self.image = cv2.imread(image_path, -1)
+        self.image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
 
     def read(self):
         if self.image is None:
@@ -327,8 +332,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=str, help="Path to root directory", required=True)
-    args = parser.parse_args()
+    opt = parser.parse_args()
 
-    app = ImageComparisonApp(root=args.root)
+    app = ImageComparisonApp(root=opt.root)
     app.after(200, app.display)
     app.mainloop()
