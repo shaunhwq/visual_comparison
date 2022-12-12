@@ -45,12 +45,16 @@ class ControlsFrame(customtkinter.CTkFrame):
         # For changing to 'Specific' mode
         self.sb_frame = customtkinter.CTkFrame(master=self)
         self.segmented_button = customtkinter.CTkSegmentedButton(master=self.sb_frame, values=self.curr_methods, command=lambda value: self.on_change_mode({"mode": self.modes[2], "value": value}))
-        self.segmented_button.grid(row=0, column=0, sticky="ew")
+        self.segmented_button.pack()
 
         self.bind_hotkeys()
 
     def _reset_internal_state(self):
         self.internal_state = {"mode": "Compare", "value": "None"}
+
+    def get_window_title(self):
+        title = f"[{self.current_index}/{len(self.files)}] {self.files[self.current_index]}"
+        return title
 
     def get_paths(self):
         output_paths = []
@@ -219,8 +223,6 @@ class ImageComparisonApp(customtkinter.CTk):
     def __init__(self, root, src_folder_name="source"):
         super().__init__()
         # configure window
-        self.title("CustomTkinter complex_example.py")
-
         methods, files = self.get_comparison_methods_files(root, src_folder_name)
         self.controls_handler = ControlsFrame(root, methods, files, master=self)
         self.controls_handler.pack()
@@ -255,6 +257,7 @@ class ImageComparisonApp(customtkinter.CTk):
 
     def display(self):
         if self.controls_handler.file_updated:
+            self.title(self.controls_handler.get_window_title())
             self.content_loaders = []
             for file in self.controls_handler.get_paths():
                 extension = os.path.splitext(file)[-1]
