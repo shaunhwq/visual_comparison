@@ -80,6 +80,7 @@ class ControlsFrame(customtkinter.CTkFrame):
                 self.sb_frame.grid_remove()
                 self.s_button_methods.set("Compare")
                 self._reset_internal_state()
+                return
             else:
                 self.s_button_methods.set("Specific")
                 self.segmented_button.set(new_state["value"])
