@@ -1,0 +1,329 @@
+from PIL import Image
+import os
+import cv2
+import glob
+import argparse
+import platform
+import numpy as np
+import customtkinter
+import image_utils
+
+
+class ControlsFrame(customtkinter.CTkFrame):
+    def __init__(self, root, methods, files, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.root = root
+        self.methods = methods
+        self.curr_methods = list(methods)
+        self.files = files
+
+        # Maintains the selected method & function for the app
+        self.internal_state = {"mode": "Compare"}
+        self.file_updated = True
+
+        # For changing selected files & methods
+        change_method_file_frame = customtkinter.CTkFrame(master=self)
+        button_prev = customtkinter.CTkButton(master=change_method_file_frame, text="<", command=self.on_prev_clicked, width=30)
+        button_prev.grid(row=0, column=0, padx=5)
+        button_method = customtkinter.CTkButton(master=change_method_file_frame, text="Method:", command=self.on_select_methods_pressed, width=50)
+        button_method.grid(row=0, column=1, padx=5)
+        button_select_specific = customtkinter.CTkButton(master=change_method_file_frame, text="Idx:", command=self.on_specify_index, width=50)
+        button_select_specific.grid(row=0, column=2, padx=5)
+        button_next = customtkinter.CTkButton(master=change_method_file_frame, text=">", command=self.on_next_clicked, width=30)
+        button_next.grid(row=0, column=3, padx=5)
+        change_method_file_frame.grid(row=0, column=0, padx=50)
+        self.current_index = 0
+
+        # For controlling modes
+        self.modes = ["Compare", "Concat", "Specific"]
+        self.radio_var = customtkinter.IntVar(value=0)
+        rb_frame = customtkinter.CTkFrame(master=self)
+        rb1 = customtkinter.CTkRadioButton(master=rb_frame, variable=self.radio_var, value=0, command=lambda: self.on_change_mode({"mode": self.modes[0]}), text=self.modes[0])
+        rb1.grid(row=0, column=0, pady=5, padx=5)
+        rb2 = customtkinter.CTkRadioButton(master=rb_frame, variable=self.radio_var, value=1, command=lambda: self.on_change_mode({"mode": self.modes[1]}), text=self.modes[1])
+        rb2.grid(row=0, column=1, pady=5, padx=5)
+        rb3 = customtkinter.CTkRadioButton(master=rb_frame, variable=self.radio_var, value=2, command=lambda: self.on_change_mode({"mode": self.modes[2], "value": methods[0]}), text=self.modes[2])
+        rb3.grid(row=0, column=2, pady=5, padx=5)
+        rb_frame.grid(row=0, column=1, padx=50)
+
+        # For changing to 'Specific' mode
+        self.sb_frame = customtkinter.CTkFrame(master=self)
+        self.segmented_button = customtkinter.CTkSegmentedButton(master=self.sb_frame, values=self.curr_methods, command=lambda value: self.on_change_mode({"mode": self.modes[2], "value": value}))
+        self.segmented_button.grid(row=0, column=0, sticky="ew")
+
+        self.bind_hotkeys()
+
+    def get_paths(self):
+        output_paths = []
+        for method in self.curr_methods:
+            incomplete_path = os.path.join(self.root, method, self.files[self.current_index])
+            completed_paths = glob.glob(incomplete_path + ".*")
+            assert len(completed_paths) == 1, completed_paths
+            output_paths.append(completed_paths[0])
+
+        return output_paths
+
+    def on_change_mode(self, state_dict):
+        mode = state_dict["mode"]
+        if mode == "Compare":
+            self.segmented_button.set(-1)
+        elif mode == "Concat":
+            self.segmented_button.set(-1)
+        else:
+            if self.internal_state["mode"] == "Specific" and self.internal_state["value"] == state_dict.get("value", None):  # Unset
+                self.segmented_button.set(-1)
+                self.radio_var.set(self.modes.index("Compare"))
+                state_dict = {"mode": "Compare"}
+                self.sb_frame.grid_remove()
+
+            else:
+                self.segmented_button.set(state_dict["value"])
+                self.radio_var.set(self.modes.index("Specific"))
+                self.sb_frame.grid(row=1, column=0, columnspan=3, sticky="nsew")
+
+        self.internal_state = state_dict
+        self.file_updated = True
+
+    def on_specify_index(self):
+        dialog = customtkinter.CTkInputDialog(text="Enter an index:", title="Specify file index")
+        # Prevent user interaction
+        dialog.grab_set()
+        dialog_str = dialog.get_input()
+
+        if dialog_str == "" or dialog_str is None:
+            print("Empty String")
+            return
+        try:
+            value = int(dialog_str)
+        except ValueError:
+            print(f"Invalid option: {dialog_str}")
+            return
+        if 0 <= value < len(self.files):
+            self.current_index = value
+        else:
+            print(f"Value out of range: {value}")
+
+        self.file_updated = True
+
+    def on_prev_clicked(self):
+        self.current_index = max(0, self.current_index - 1)
+        self.file_updated = True
+
+    def on_next_clicked(self):
+        self.current_index = min(len(self.files), self.current_index + 1)
+        self.file_updated = True
+
+    def on_select_methods_pressed(self):
+        def set_new_methods(new_methods):
+            if len(new_methods) < 2:
+                print(f"Please select more than 2 methods")
+                return
+            self.curr_methods = new_methods
+            self.radio_var.set(self.modes.index("Compare"))
+            self.segmented_button.set(-1)
+            self.internal_state = {"mode": "Compare"}
+            self.segmented_button.configure(values=new_methods, command=lambda value: self.on_change_mode({"mode": self.modes[2], "value": value}))
+            self.bind_hotkeys()
+            self.file_updated = True
+
+        MethodsSelectionPopUp(all_methods=self.methods, current_methods=self.curr_methods, app_callback=set_new_methods)
+
+    def bind_hotkeys(self):
+        self.master.bind("a", lambda event: self.on_prev_clicked())
+        self.master.bind("d", lambda event: self.on_next_clicked())
+
+        for i in range(10):
+            self.master.unbind(str(i))
+        for i in range(len(self.curr_methods)):
+            self.master.bind(str(i + 1), lambda event: self.on_change_mode({"mode": "Specific", "value": self.curr_methods[int(event.keysym) - 1]}))
+
+
+class MethodsSelectionPopUp(customtkinter.CTkToplevel):
+    def __init__(self, all_methods, current_methods, app_callback):
+        super().__init__()
+        self.app_callback = app_callback
+
+        reset_button = customtkinter.CTkButton(master=self, text="Reset", command=self._on_reset_pressed)
+        reset_button.pack(padx=5, pady=5)
+        ok_button = customtkinter.CTkButton(master=self, text="Confirm", command=self._on_ok_pressed)
+        ok_button.pack(padx=5, pady=5)
+
+        # Sort by current methods then remainder
+        sorted_methods = list(current_methods)
+        method_set = set(current_methods)
+        for method in all_methods:
+            if method not in method_set:
+                sorted_methods.append(method)
+
+        self.checkboxes = []
+        for i, method_name in enumerate(sorted_methods):
+            checkbox = customtkinter.CTkCheckBox(master=self, text=method_name, command=self._on_checkbox_checked, onvalue=i + 1, offvalue=0)
+            checkbox.pack()
+            if i < len(current_methods):
+                checkbox.select()
+            self.checkboxes.append(checkbox)
+
+        # Prevent user interaction
+        self.grab_set()
+
+        self.mainloop()
+
+    def _on_checkbox_checked(self):
+        new_list = [checkbox for checkbox in self.checkboxes if checkbox.get()]
+        new_list += sorted([checkbox for checkbox in self.checkboxes if not checkbox.get()], key=lambda checkbox: checkbox.cget("text"))
+        for checkbox in new_list: checkbox.pack_forget()
+        for checkbox in new_list: checkbox.pack()
+        self.checkboxes = new_list
+
+    def _on_reset_pressed(self):
+        self.checkboxes = sorted(self.checkboxes, key=lambda checkbox: checkbox.cget("text"))
+        for checkbox in self.checkboxes: checkbox.pack_forget()
+        for checkbox in self.checkboxes: checkbox.pack()
+        for checkbox in self.checkboxes: checkbox.deselect()
+
+    def _on_ok_pressed(self):
+        methods_to_display = [checkbox.cget("text") for checkbox in self.checkboxes if checkbox.get()]
+        self.app_callback(methods_to_display)
+        self.destroy()
+
+
+class DisplayWindowFrame(customtkinter.CTkFrame):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.image_label = customtkinter.CTkLabel(master=self, text="", width=720, height=1280)
+        self.image_label.grid(row=0, column=0)
+        self.mouse_position = (0, 0)
+        self.image_label.bind("<Motion>", self.on_mouse_move)
+
+    def update_image(self, image):
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        h, w, _ = image.shape
+        # Different systems have different borders which use part of the screen for their display (dock etc)
+        h_multiplier = 0.85 if platform.system() == "Darwin" else 0.9
+        screen_h, screen_w = self.master.winfo_screenheight() * h_multiplier, self.master.winfo_screenwidth()
+        if w > screen_w or h > screen_h:
+            scale = 1 / max(w / screen_w, h / screen_h)
+            image = image_utils.resize_scale(image, scale=scale)
+            h, w, _ = image.shape
+        pil_image = Image.fromarray(image)
+        ctk_image = customtkinter.CTkImage(light_image=pil_image, size=(w, h))
+        self.image_label.configure(image=ctk_image, width=w, height=h)
+
+    def on_mouse_move(self, event):
+        self.mouse_position = (event.x, event.y)
+
+
+class ImageComparisonApp(customtkinter.CTk):
+    def __init__(self, root, src_folder_name="source"):
+        super().__init__()
+        # configure window
+        self.title("CustomTkinter complex_example.py")
+
+        methods, files = self.get_comparison_methods_files(root, src_folder_name)
+        self.controls_handler = ControlsFrame(root, methods, files, master=self)
+        self.controls_handler.pack()
+
+        self.display_handler = DisplayWindowFrame(self)
+        self.display_handler.pack()
+
+        self.content_loaders = None
+
+    @staticmethod
+    def get_comparison_methods_files(root, src_folder_name):
+        # Contains method name (folder name)
+        methods = [folder for folder in os.listdir(root) if folder[0] != "."]
+        if src_folder_name in methods:
+            methods.insert(0, methods.pop(methods.index(src_folder_name)))
+
+        assert len(methods) > 1, "Need more than 1 folder for comparison"
+
+        # Finding common files for comparison, should have the same filename (without extension)
+        common_files = None
+        for folder in methods:
+            folder_path = os.path.join(root, folder)
+            file_paths = [os.path.splitext(file_path)[0] for file_path in os.listdir(folder_path) if file_path[0] != "."]
+            common_files = set(file_paths) if common_files is None else common_files.intersection(set(file_paths))
+
+        # Contains files with same names across all sub-directories for comparison
+        assert common_files, "No files in common"
+        common_files = list(common_files)
+        common_files.sort()
+
+        return methods, common_files
+
+    def display(self):
+        if self.controls_handler.file_updated:
+            self.content_loaders = []
+            for file in self.controls_handler.get_paths():
+                extension = os.path.splitext(file)[-1]
+                if extension in {".jpg", ".png", ".hdr"}:
+                    self.content_loaders.append(ImageCapture(file))
+                else:
+                    raise NotImplementedError(f"Ext not supported: {extension} for file {file}")
+            self.display_handler.mouse_position = (0, 0)
+            self.controls_handler.file_updated = False
+
+        images = [cap.read()[1] for cap in self.content_loaders]
+
+        mode = self.controls_handler.internal_state["mode"]
+        method = self.controls_handler.internal_state.get("value", None)
+        current_methods = self.controls_handler.curr_methods
+
+        if mode == "Compare":
+            title_positions = [image_utils.TextPosition.TOP_LEFT, image_utils.TextPosition.TOP_RIGHT, image_utils.TextPosition.BTM_LEFT, image_utils.TextPosition.BTM_RIGHT]
+        elif mode == "Concat":
+            title_positions = [image_utils.TextPosition.TOP_LEFT] * len(current_methods)
+        elif mode == "Specific":
+            title_positions = [image_utils.TextPosition.TOP_LEFT] * len(current_methods)
+        else:
+            raise NotImplementedError(f"Load image for mode not added: {mode}")
+
+        # Load and resize the images
+        labelled_imgs = []
+        for image, title, title_pos in zip(images, current_methods, title_positions):
+            image = image_utils.put_text(image, title, title_pos)
+            labelled_imgs.append(image)
+        images = labelled_imgs
+
+        if mode == "Concat":
+            self.output_image = np.hstack(images)
+        elif mode == "Specific":
+            method_idx = current_methods.index(method)
+            self.output_image = images[method_idx]
+        else:
+            m_x, m_y = self.display_handler.mouse_position
+            i_y, i_x = images[0].shape[:2]
+            if 0 <= m_x < i_x and 0 <= m_y < i_y:
+                self.output_image = image_utils.merge_multiple_images(images[:4], self.display_handler.mouse_position)
+
+        self.display_handler.update_image(self.output_image)
+        self.after(10, self.display)
+
+
+class ImageCapture:
+    """
+    TODO: Handle HDR Reading too later?
+    """
+    def __init__(self, image_path):
+        self.image = cv2.imread(image_path, -1)
+
+    def read(self):
+        if self.image is None:
+            return False, None
+        return True, self.image.copy()
+
+
+if __name__ == "__main__":
+    # Modes: "System" (standard), "Dark", "Light"
+    customtkinter.set_appearance_mode("System")
+    # Themes: "blue" (standard), "green", "dark-blue"
+    customtkinter.set_default_color_theme("dark-blue")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", type=str, help="Path to root directory", required=True)
+    args = parser.parse_args()
+
+    app = ImageComparisonApp(root=args.root)
+    app.after(200, app.display)
+    app.mainloop()
