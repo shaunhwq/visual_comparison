@@ -18,7 +18,8 @@ class ControlsFrame(customtkinter.CTkFrame):
         self.files = files
 
         # Maintains the selected method & function for the app
-        self.internal_state = {"mode": "Compare"}
+        self.internal_state = {}
+        self._reset_internal_state()
         self.file_updated = True
 
         # For changing selected files & methods
@@ -36,15 +37,10 @@ class ControlsFrame(customtkinter.CTkFrame):
 
         # For controlling modes
         self.modes = ["Compare", "Concat", "Specific"]
-        self.radio_var = customtkinter.IntVar(value=0)
-        rb_frame = customtkinter.CTkFrame(master=self)
-        rb1 = customtkinter.CTkRadioButton(master=rb_frame, variable=self.radio_var, value=0, command=lambda: self.on_change_mode({"mode": self.modes[0]}), text=self.modes[0])
-        rb1.grid(row=0, column=0, pady=5, padx=5)
-        rb2 = customtkinter.CTkRadioButton(master=rb_frame, variable=self.radio_var, value=1, command=lambda: self.on_change_mode({"mode": self.modes[1]}), text=self.modes[1])
-        rb2.grid(row=0, column=1, pady=5, padx=5)
-        rb3 = customtkinter.CTkRadioButton(master=rb_frame, variable=self.radio_var, value=2, command=lambda: self.on_change_mode({"mode": self.modes[2], "value": methods[0]}), text=self.modes[2])
-        rb3.grid(row=0, column=2, pady=5, padx=5)
-        rb_frame.grid(row=0, column=1, padx=50)
+        methods_frame = customtkinter.CTkFrame(master=self)
+        self.s_button_methods = customtkinter.CTkSegmentedButton(master=methods_frame, values=self.modes, command=lambda mode: self.on_change_mode({"mode": mode, "value": self.curr_methods[0]}))
+        self.s_button_methods.pack()
+        methods_frame.grid(row=0, column=1)
 
         # For changing to 'Specific' mode
         self.sb_frame = customtkinter.CTkFrame(master=self)
@@ -52,6 +48,9 @@ class ControlsFrame(customtkinter.CTkFrame):
         self.segmented_button.grid(row=0, column=0, sticky="ew")
 
         self.bind_hotkeys()
+
+    def _reset_internal_state(self):
+        self.internal_state = {"mode": "Compare", "value": "None"}
 
     def get_paths(self):
         output_paths = []
@@ -63,25 +62,27 @@ class ControlsFrame(customtkinter.CTkFrame):
 
         return output_paths
 
-    def on_change_mode(self, state_dict):
-        mode = state_dict["mode"]
+    def on_change_mode(self, new_state):
+        mode = new_state["mode"]
         if mode == "Compare":
             self.segmented_button.set(-1)
+            self.sb_frame.grid_remove()
         elif mode == "Concat":
             self.segmented_button.set(-1)
+            self.sb_frame.grid_remove()
         else:
-            if self.internal_state["mode"] == "Specific" and self.internal_state["value"] == state_dict.get("value", None):  # Unset
+            if new_state["value"] == self.internal_state["value"] and self.internal_state["mode"] == "Specific":
                 self.segmented_button.set(-1)
-                self.radio_var.set(self.modes.index("Compare"))
-                state_dict = {"mode": "Compare"}
                 self.sb_frame.grid_remove()
-
+                self.s_button_methods.set("Compare")
+                self._reset_internal_state()
             else:
-                self.segmented_button.set(state_dict["value"])
-                self.radio_var.set(self.modes.index("Specific"))
-                self.sb_frame.grid(row=1, column=0, columnspan=3, sticky="nsew")
+                self.s_button_methods.set("Specific")
+                self.segmented_button.set(new_state["value"])
+                self.sb_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
 
-        self.internal_state = state_dict
+        self.internal_state = new_state
+
         self.file_updated = True
 
     def on_specify_index(self):
@@ -119,9 +120,9 @@ class ControlsFrame(customtkinter.CTkFrame):
                 print(f"Please select more than 2 methods")
                 return
             self.curr_methods = new_methods
-            self.radio_var.set(self.modes.index("Compare"))
+            self.s_button_methods.set("Compare")
             self.segmented_button.set(-1)
-            self.internal_state = {"mode": "Compare"}
+            self._reset_internal_state()
             self.segmented_button.configure(values=new_methods, command=lambda value: self.on_change_mode({"mode": self.modes[2], "value": value}))
             self.bind_hotkeys()
             self.file_updated = True
