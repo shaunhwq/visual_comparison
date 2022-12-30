@@ -1,3 +1,4 @@
+import scrollviewer
 from PIL import Image
 import os
 import cv2
@@ -23,16 +24,19 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
         self.file_updated = True
 
         # For changing selected files & methods
+        # TODO: Hardcoded source folder
+        self.scroll_viewer = scrollviewer.ScrollViewer(os.path.join(root, "source"), files, self.on_specify_index, master=self)
+        self.scroll_viewer.grid(row=0, column=0, columnspan=3)
         change_method_file_frame = customtkinter.CTkFrame(master=self)
         button_prev = customtkinter.CTkButton(master=change_method_file_frame, text="<", command=self.on_prev, width=30, height=25)
-        button_prev.grid(row=0, column=0, padx=5)
+        button_prev.grid(row=1, column=0, padx=5)
         button_method = customtkinter.CTkButton(master=change_method_file_frame, text="Method:", command=self.on_select_methods, width=50, height=25)
-        button_method.grid(row=0, column=1, padx=5)
+        button_method.grid(row=1, column=1, padx=5)
         button_select_specific = customtkinter.CTkButton(master=change_method_file_frame, text="Idx:", command=self.on_specify_index, width=50, height=25)
-        button_select_specific.grid(row=0, column=2, padx=5)
+        button_select_specific.grid(row=1, column=2, padx=5)
         button_next = customtkinter.CTkButton(master=change_method_file_frame, text=">", command=self.on_next, width=30, height=25)
-        button_next.grid(row=0, column=3, padx=5)
-        change_method_file_frame.grid(row=0, column=0)
+        button_next.grid(row=1, column=3, padx=5)
+        change_method_file_frame.grid(row=1, column=0)
         self.current_index = 0
 
         # For controlling modes
@@ -40,7 +44,7 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
         modes_frame = customtkinter.CTkFrame(master=self)
         self.s_button_modes = customtkinter.CTkSegmentedButton(master=modes_frame, values=self.modes, command=lambda mode: self.on_change_mode(mode, self.curr_methods[0]))
         self.s_button_modes.pack()
-        modes_frame.grid(row=0, column=1)
+        modes_frame.grid(row=1, column=1)
 
         # For changing to 'Specific' mode
         self.methods_frame = customtkinter.CTkFrame(master=self)
@@ -80,38 +84,43 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
             else:
                 self.s_button_modes.set("Specific")
                 self.s_button_methods.set(method)
-                self.methods_frame.grid(row=1, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+                self.methods_frame.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
 
         self.internal_state = {"mode": mode, "method": method}
         self.file_updated = True
 
-    def on_specify_index(self):
-        dialog = customtkinter.CTkInputDialog(text="Enter an index:", title="Specify file index")
-        # Prevent user interaction
-        dialog.grab_set()
-        dialog_str = dialog.get_input()
+    def on_specify_index(self, index=None):
+        if index is None:
+            dialog = customtkinter.CTkInputDialog(text="Enter an index:", title="Specify file index")
+            # Prevent user interaction
+            dialog.grab_set()
+            dialog_str = dialog.get_input()
 
-        if dialog_str == "" or dialog_str is None:
-            print("Empty String")
-            return
-        try:
-            value = int(dialog_str)
-        except ValueError:
-            print(f"Invalid option: {dialog_str}")
-            return
+            if dialog_str == "" or dialog_str is None:
+                print("Empty String")
+                return
+            try:
+                value = int(dialog_str)
+            except ValueError:
+                print(f"Invalid option: {dialog_str}")
+                return
+        else:
+            value = index
         if 0 <= value < len(self.files):
             self.current_index = value
         else:
             print(f"Value out of range: {value}")
-
+        self.scroll_viewer.highlight_selected(self.current_index)
         self.file_updated = True
 
     def on_prev(self):
         self.current_index = max(0, self.current_index - 1)
+        self.scroll_viewer.highlight_selected(self.current_index)
         self.file_updated = True
 
     def on_next(self):
         self.current_index = min(len(self.files), self.current_index + 1)
+        self.scroll_viewer.highlight_selected(self.current_index)
         self.file_updated = True
 
     def on_select_methods(self):
