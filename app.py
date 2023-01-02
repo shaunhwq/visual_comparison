@@ -119,7 +119,7 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
         self.file_updated = True
 
     def on_next(self):
-        self.current_index = min(len(self.files), self.current_index + 1)
+        self.current_index = min(len(self.files) - 1, self.current_index + 1)
         self.scroll_viewer.highlight_selected(self.current_index)
         self.file_updated = True
 
