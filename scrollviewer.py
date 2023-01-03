@@ -37,32 +37,35 @@ class ScrollViewer(customtkinter.CTkFrame):
         # Bind mousewheel to allow horizontal scrolling
         canvas_viewport.bind_all("<MouseWheel>", self._on_mousewheel)
 
-        # TODO: Maximum scroll is somewhere around 30k pixels.
         self.selected_idx = 0
+        self.view_radius = 100
+        self.view_index = -1000
+
         self.buttons = []
         for i, image in enumerate(images):
             image_pil = PIL.Image.fromarray(image)
             photo_img = PhotoImage(image_pil)
             button = tk.Button(master=scrollable_frame, image=photo_img, command=lambda i=i: callback(i), borderwidth=0)
             button.image = photo_img
-            if i < 101:
-                button.grid(row=0, column=i)
             self.buttons.append(button)
+
         self.canvas_viewport = canvas_viewport
         self.scrollable_frame = scrollable_frame
         canvas_viewport.grid(row=0, sticky="nsew")
 
-        self.view_index = 0
         self.highlight_selected(0)
 
-    def place_objects(self, curr_idx, next_idx, display_radius=100):
+    def get_index_min_max(self, index):
+        minimum = max(0, index - self.view_radius)
+        maximum = min(len(self.buttons), index + self.view_radius + 1)
+        return minimum, maximum
+
+    def place_objects(self, curr_idx, next_idx):
         if curr_idx == next_idx:
             return
 
-        curr_min = max(0, curr_idx - display_radius)
-        curr_max = min(len(self.buttons), curr_idx + display_radius + 1)
-        next_min = max(0, next_idx - display_radius)
-        next_max = min(len(self.buttons), next_idx + display_radius + 1)
+        curr_min, curr_max = self.get_index_min_max(curr_idx)
+        next_min, next_max = self.get_index_min_max(next_idx)
 
         curr_idxs = set(i for i in range(curr_min, curr_max))
         next_idxs = set(i for i in range(next_min, next_max))
@@ -75,10 +78,7 @@ class ScrollViewer(customtkinter.CTkFrame):
         for idx in show_idxs:
             self.buttons[idx].grid(row=0, column=idx)
 
-        # TODO: Optimize, only if selected index is close to 50 of the edges then update
         print(f"Hide: {len(hide_idxs)}, Show: {len(show_idxs)}, Keep: {len(keep_idxs)}")
-
-        # TODO: Is this the right way?
         self.scrollable_frame.update_idletasks()
 
     def set_view_by_index(self, index, position="center"):
@@ -106,7 +106,12 @@ class ScrollViewer(customtkinter.CTkFrame):
     def highlight_selected(self, index):
         # TODO: Why click max value will set over?
         t1 = time.time()
-        self.place_objects(self.view_index, index)
+        view_min, view_max = self.get_index_min_max(self.view_index)
+        if not view_min + 10 <= self.selected_idx < view_max - 10:
+            print("Updating objects")
+            self.place_objects(self.view_index, index)
+            self.view_index = index
+
         print(f"{round((time.time() - t1) * 1000, 2)} ms")
 
         # Reset previous button
@@ -114,7 +119,6 @@ class ScrollViewer(customtkinter.CTkFrame):
         prev_button.configure(highlightbackground="black", borderwidth=0)
 
         # Set new button white border
-        self.view_index = index
         self.selected_idx = index
         curr_button = self.buttons[self.selected_idx]
         curr_button.configure(highlightbackground="white", borderwidth=3)
@@ -126,28 +130,26 @@ class ScrollViewer(customtkinter.CTkFrame):
             event = args[0]
             direction = "left" if event.delta * -1 < 0 else "right"
             view_min, view_max = self.canvas_viewport.xview()
-            #print(view_min, view_max)
+
             if view_min == 0 and direction == "left":
-                # Need a self.view position also
-                print("expanding view left")
+                # 50 So still got some space for scrolling
                 new_index = max(0, self.view_index - 50)
                 if new_index != self.view_index:
+                    print("expanding view left")
                     self.place_objects(self.view_index, new_index)
-                    self.set_view_by_index(max(0, self.view_index - 100), "left")
+                    self.set_view_by_index(max(0, self.view_index - self.view_radius), "left")
                     self.view_index = new_index
+
             elif view_max == 1.0 and direction == "right":
-                print("expanding view right..")
+                # 50 So still got some space for scrolling
                 new_index = min(len(self.buttons) - 1, self.view_index + 50)
-                if new_index != self.view_index and self.view_index + 100 < len(self.buttons):
-                    print("Changing")
-                    print(new_index, self.view_index)
+                if new_index != self.view_index and self.view_index + self.view_radius < len(self.buttons):
+                    print("expanding view right..")
                     self.place_objects(self.view_index, new_index)
-                    self.set_view_by_index(min(len(self.buttons) - 1, self.view_index + 100), "right")
+                    self.set_view_by_index(min(len(self.buttons) - 1, self.view_index + self.view_radius), "right")
                     self.view_index = new_index
             else:
-                print("Scroll")
                 self.canvas_viewport.xview_scroll(-1 * int(event.delta), "units")
-            print("Done")
 
     @staticmethod
     def _load_img_thumbnail(img_path, max_height=75):
