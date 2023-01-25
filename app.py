@@ -62,6 +62,7 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
 
     def get_paths(self):
         output_paths = []
+        # TODO: Optimize. I think this is a O(n^2) method, if we use dict to map could reduce to O(n)
         for method in self.curr_methods:
             incomplete_path = os.path.join(self.root, method, self.files[self.current_index])
             completed_paths = glob.glob(incomplete_path + ".*")
@@ -291,6 +292,7 @@ class ContentComparisonApp(customtkinter.CTk):
         return methods, common_files
 
     def display(self):
+        # TODO: Can shift this to be on its own
         if self.mode_methods_handler.file_updated:
             self.title(self.mode_methods_handler.get_window_title())
             self.content_loaders = []
@@ -383,6 +385,8 @@ class ImageCapture:
         return True, self.image.copy()
 
 
+# TODO: Add comments for some of the functions should help with readability
+# TODO: Add logger
 if __name__ == "__main__":
     # Modes: "System" (standard), "Dark", "Light"
     customtkinter.set_appearance_mode("System")
