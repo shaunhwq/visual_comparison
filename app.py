@@ -234,18 +234,38 @@ class DisplayWindowFrame(customtkinter.CTkFrame):
         self.mouse_position = (int(event.x / self.scale), int(event.y / self.scale))
 
 
-class ImageComparisonApp(customtkinter.CTk):
+class ContentComparisonApp(customtkinter.CTk):
     def __init__(self, root, src_folder_name="source"):
         super().__init__()
         # configure window
         methods, files = self.get_comparison_methods_files(root, src_folder_name)
         self.mode_methods_handler = ModeMethodsControllerFrame(root, methods, files, master=self)
-        self.mode_methods_handler.pack()
-
+        self.mode_methods_handler.grid(row=0, column=0)
+        self.video_controller = customtkinter.CTkSlider(master=self, from_=0, to=100, width=720, command=self._on_video_controller_updated)
         self.display_handler = DisplayWindowFrame(self)
-        self.display_handler.pack()
+        self.display_handler.grid(row=2, column=0)
 
         self.content_loaders = None
+        self.paused = False
+        self.images = None
+        self.bind("<space>", self._on_spacebar)
+
+    def _on_video_controller_updated(self, value):
+        video_position = None
+        for cap in self.content_loaders:
+            if not isinstance(cap, cv2.VideoCapture):
+                continue
+
+            if video_position is None:
+                video_position = int(value / 100 * cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                cap.set(cv2.CAP_PROP_POS_FRAMES, video_position)
+            else:
+                # Weird bug when setting video position. If no offset is done, will be out of sync
+                # Seems like only occurs for larger frame positions. e.g. 0.2 * cv2.CAP_PROP_FRAME_COUNT
+                cap.set(cv2.CAP_PROP_POS_FRAMES, video_position + 1)
+
+    def _on_spacebar(self, event):
+        self.paused = not self.paused
 
     @staticmethod
     def get_comparison_methods_files(root, src_folder_name):
@@ -275,15 +295,42 @@ class ImageComparisonApp(customtkinter.CTk):
             self.title(self.mode_methods_handler.get_window_title())
             self.content_loaders = []
             for file in self.mode_methods_handler.get_paths():
-                extension = os.path.splitext(file)[-1]
+                extension = os.path.splitext(file)[-1].lower()
                 if extension in {".jpg", ".png", ".hdr"}:
                     self.content_loaders.append(ImageCapture(file))
+                elif extension in {".mp4"}:
+                    self.content_loaders.append(cv2.VideoCapture(file))
                 else:
                     raise NotImplementedError(f"Ext not supported: {extension} for file {file}")
             self.display_handler.mouse_position = (0, 0)
             self.mode_methods_handler.file_updated = False
+            self.paused = False
 
-        images = [cap.read()[1] for cap in self.content_loaders]
+        # TODO: Add function for image manipulation
+        if not self.paused:
+            rets, images = [], []
+            slider_set = False
+            for cap in self.content_loaders:
+                if isinstance(cap, cv2.VideoCapture) and not slider_set:
+                    video_position = cap.get(cv2.CAP_PROP_POS_FRAMES)
+                    video_length = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+                    self.video_controller.set(video_position / video_length * 100)
+                    if len(self.video_controller.grid_info()) == 0:
+                        self.video_controller.grid(row=1, column=0)
+                    slider_set = True
+                ret, frame = cap.read()
+                rets.append(ret)
+                images.append(frame)
+            if not slider_set:
+                self.video_controller.grid_forget()
+
+            if not all(rets):
+                self.paused = True
+                images = self.images
+            else:
+                self.images = images
+        else:
+            images = self.images
 
         mode = self.mode_methods_handler.internal_state["mode"]
         method = self.mode_methods_handler.internal_state.get("method", None)
@@ -346,6 +393,6 @@ if __name__ == "__main__":
     parser.add_argument("--root", type=str, help="Path to root directory", required=True)
     opt = parser.parse_args()
 
-    app = ImageComparisonApp(root=opt.root)
+    app = ContentComparisonApp(root=opt.root)
     app.after(200, app.display)
     app.mainloop()
