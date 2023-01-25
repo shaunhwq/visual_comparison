@@ -9,6 +9,7 @@ from PIL.ImageTk import PhotoImage
 from concurrent.futures import ThreadPoolExecutor
 import glob
 import time
+from tqdm import tqdm
 
 
 class ScrollViewer(customtkinter.CTkFrame):
@@ -23,7 +24,7 @@ class ScrollViewer(customtkinter.CTkFrame):
         # Need to change to use glob to read later on because we will depend on the items in the set.
         paths.sort()
         with ThreadPoolExecutor() as executor:
-            images = list(executor.map(self._load_img_thumbnail, paths))
+            images = list(tqdm(executor.map(self._load_img_thumbnail, paths), desc="Loading thumbnails...", total=len(paths)))
 
         canvas_viewport = tk.Canvas(self, height=80, width=720)
         scrollable_frame = ttk.Frame(canvas_viewport)
