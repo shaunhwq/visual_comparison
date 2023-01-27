@@ -1,3 +1,4 @@
+import enum
 import scrollviewer
 from PIL import Image
 import os
@@ -8,6 +9,13 @@ import platform
 import numpy as np
 import customtkinter
 import image_utils
+
+
+class AppStatus(enum.Enum):
+    UPDATE_MODE = enum.auto()
+    UPDATE_FILE = enum.auto()
+    UPDATE_METHOD = enum.auto()
+    UPDATED = enum.auto()
 
 
 class ModeMethodsControllerFrame(customtkinter.CTkFrame):
@@ -21,7 +29,7 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
         # Maintains the selected method & function for the app
         self.internal_state = {}
         self._reset_internal_state()
-        self.file_updated = True
+        self.update_status = AppStatus.UPDATE_FILE
 
         # For changing selected files & methods
         # TODO: Hardcoded source folder
@@ -88,7 +96,7 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
                 self.methods_frame.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
 
         self.internal_state = {"mode": mode, "method": method}
-        self.file_updated = True
+        self.update_status = AppStatus.UPDATE_MODE
 
     def on_specify_index(self, index=None):
         if index is None:
@@ -112,17 +120,17 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
         else:
             print(f"Value out of range: {value}")
         self.scroll_viewer.highlight_selected(self.current_index)
-        self.file_updated = True
+        self.update_status = AppStatus.UPDATE_FILE
 
     def on_prev(self):
         self.current_index = max(0, self.current_index - 1)
         self.scroll_viewer.highlight_selected(self.current_index)
-        self.file_updated = True
+        self.update_status = AppStatus.UPDATE_FILE
 
     def on_next(self):
         self.current_index = min(len(self.files) - 1, self.current_index + 1)
         self.scroll_viewer.highlight_selected(self.current_index)
-        self.file_updated = True
+        self.update_status = AppStatus.UPDATE_FILE
 
     def on_select_methods(self):
         def set_new_methods(new_methods):
@@ -135,7 +143,7 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
             self._reset_internal_state()
             self.s_button_methods.configure(values=new_methods, command=lambda value: self.on_change_mode(self.modes[2], value))
             self.bind_hotkeys()
-            self.file_updated = True
+            self.update_status = AppStatus.UPDATE_FILE.UPDATE_METHOD
 
         MethodsSelectionPopUp(all_methods=self.methods, current_methods=self.curr_methods, app_callback=set_new_methods)
 
@@ -292,8 +300,9 @@ class ContentComparisonApp(customtkinter.CTk):
         return methods, common_files
 
     def display(self):
-        # TODO: Can shift this to be on its own
-        if self.mode_methods_handler.file_updated:
+        # Read the files when changing method or files.
+        update_status = self.mode_methods_handler.update_status
+        if update_status == AppStatus.UPDATE_FILE or update_status == AppStatus.UPDATE_METHOD:
             self.title(self.mode_methods_handler.get_window_title())
             self.content_loaders = []
             for file in self.mode_methods_handler.get_paths():
@@ -305,7 +314,7 @@ class ContentComparisonApp(customtkinter.CTk):
                 else:
                     raise NotImplementedError(f"Ext not supported: {extension} for file {file}")
             self.display_handler.mouse_position = (0, 0)
-            self.mode_methods_handler.file_updated = False
+            self.mode_methods_handler.update_status = AppStatus.UPDATED
             self.paused = False
 
         # TODO: Add function for image manipulation
