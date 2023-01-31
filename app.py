@@ -343,6 +343,7 @@ class ContentComparisonApp(customtkinter.CTk):
         else:
             images = self.images
 
+        images = [img.copy() for img in images]
         mode = self.mode_methods_handler.internal_state["mode"]
         method = self.mode_methods_handler.internal_state.get("method", None)
         current_methods = self.mode_methods_handler.curr_methods
