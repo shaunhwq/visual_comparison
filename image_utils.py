@@ -47,7 +47,6 @@ def put_text(
     # black outline on white text
     cv2.putText(img, text, text_position, font, scale, (0, 0, 0), thickness + 1)
     cv2.putText(img, text, text_position, font, scale, (255, 255, 255), thickness)
-    return img
 
 
 def merge_crop(img1: np.array, img2: np.array, position: Tuple[int, int], direction: str) -> np.array:

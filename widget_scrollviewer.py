@@ -79,7 +79,7 @@ class ScrollViewer(customtkinter.CTkFrame):
         for idx in show_idxs:
             self.buttons[idx].grid(row=0, column=idx)
 
-        print(f"Hide: {len(hide_idxs)}, Show: {len(show_idxs)}, Keep: {len(keep_idxs)}")
+        # print(f"Hide: {len(hide_idxs)}, Show: {len(show_idxs)}, Keep: {len(keep_idxs)}")
         self.scrollable_frame.update_idletasks()
 
     def set_view_by_index(self, index, position="center"):
@@ -109,11 +109,11 @@ class ScrollViewer(customtkinter.CTkFrame):
         t1 = time.time()
         view_min, view_max = self.get_index_min_max(self.view_index)
         if not view_min + 10 <= self.selected_idx < view_max - 10:
-            print("Updating objects")
+            # print("Updating objects")
             self.place_objects(self.view_index, index)
             self.view_index = index
 
-        print(f"{round((time.time() - t1) * 1000, 2)} ms")
+        # print(f"{round((time.time() - t1) * 1000, 2)} ms")
 
         # Reset previous button
         prev_button = self.buttons[self.selected_idx]
@@ -136,7 +136,7 @@ class ScrollViewer(customtkinter.CTkFrame):
                 # 50 So still got some space for scrolling
                 new_index = max(0, self.view_index - 50)
                 if new_index != self.view_index:
-                    print("expanding view left")
+                    # print("expanding view left")
                     self.place_objects(self.view_index, new_index)
                     self.set_view_by_index(max(0, self.view_index - self.view_radius), "left")
                     self.view_index = new_index
@@ -145,7 +145,7 @@ class ScrollViewer(customtkinter.CTkFrame):
                 # 50 So still got some space for scrolling
                 new_index = min(len(self.buttons) - 1, self.view_index + 50)
                 if new_index != self.view_index and self.view_index + self.view_radius < len(self.buttons):
-                    print("expanding view right..")
+                    # print("expanding view right..")
                     self.place_objects(self.view_index, new_index)
                     self.set_view_by_index(min(len(self.buttons) - 1, self.view_index + self.view_radius), "right")
                     self.view_index = new_index
