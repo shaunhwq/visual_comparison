@@ -14,7 +14,7 @@ A tool for comparing images &amp; videos.
 Either create a virtualenv or conda env. Tested on python 3.8. After activating,
 
 ```
-pip3 install customtkinter opencv-python pillow
+pip3 install customtkinter opencv-python pillow tqdm
 ```
 
 ## Usage
