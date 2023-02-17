@@ -106,7 +106,6 @@ class ScrollViewer(customtkinter.CTkFrame):
 
     def highlight_selected(self, index):
         # TODO: Why click max value will set over?
-        t1 = time.time()
         view_min, view_max = self.get_index_min_max(self.view_index)
         if not view_min + 10 <= self.selected_idx < view_max - 10:
             # print("Updating objects")
