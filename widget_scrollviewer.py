@@ -93,7 +93,7 @@ class ScrollViewer(customtkinter.CTkFrame):
         elif position == "right":
             button_x_pos -= 720 - button_width if button_x_pos > 720 else button_x_pos
         elif position == "left":
-            button_x_pos = button_x_pos
+            pass
         else:
             raise NotImplementedError(f"Unknown position: {position}")
 
