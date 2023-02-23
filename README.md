@@ -1,13 +1,10 @@
 # visual_comparison
 A tool for comparing images &amp; videos.
 
-## Modes of operation
-
-| Modes                | Description                                           |
-|----------------------|-------------------------------------------------------|
-| Comparison (Default) | Shows up to 4 files at once. Move mouse accordingly   |
-| Specific             | Shows a single method based on what the user selected |
-| Concatenate          | Display all files horizontally                        |
+| Compare (Up to 4)                                   | Show Specific                                                               | Concatenate                    |
+|-----------------------------------------------------|-----------------------------------------------------------------------------|--------------------------------|
+| ![](assets/compare.gif)                             | ![](assets/specific.gif)                                                    | ![](assets/concat.png)         |
+| Shows up to 4 files at once. Move mouse accordingly | Shows a single method based on what the user selected (with their keyboard) | Display all files horizontally |
 
 ## Installation
 
