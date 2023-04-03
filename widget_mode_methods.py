@@ -143,12 +143,17 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
 
     def bind_hotkeys(self):
         self.master.bind("a", lambda event: self.on_prev())
+        self.master.bind("<Left>", lambda event: self.on_prev())
         self.master.bind("d", lambda event: self.on_next())
+        self.master.bind("<Right>", lambda event: self.on_next())
 
         for i in range(10):
             self.master.unbind(str(i))
         for i in range(len(self.curr_methods)):
+            # Bind number keys
             self.master.bind(str(i + 1), lambda event: self.on_change_mode("Specific", self.curr_methods[int(event.keysym) - 1]))
+            # Bind keypad
+            self.master.bind(f"<KP_{i + 1}>", lambda event: self.on_change_mode("Specific", self.curr_methods[int(event.keysym.split("_")[1]) - 1]))
 
 
 class MethodsSelectionPopUp(customtkinter.CTkToplevel):
