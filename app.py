@@ -39,6 +39,7 @@ class ContentComparisonApp(customtkinter.CTk):
             self.display_handler.mouse_position = (0, 0)
             self.mode_methods_handler.update_status = AppStatus.UPDATED
             self.paused = False
+            self.zoom_helper.reset()
 
         if not self.paused:
             # Show or hide video controller
