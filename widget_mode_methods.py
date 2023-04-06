@@ -149,7 +149,7 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
 
         for i in range(10):
             self.master.unbind(str(i))
-        for i in range(len(self.curr_methods)):
+        for i in range(min(len(self.curr_methods), 9)):
             # Bind number keys
             self.master.bind(str(i + 1), lambda event: self.on_change_mode("Specific", self.curr_methods[int(event.keysym) - 1]))
             # Bind keypad
