@@ -5,6 +5,7 @@ import image_utils
 from content_manager import ContentManager
 from widget_mode_methods import ModeMethodsControllerFrame, AppStatus
 from widget_display import DisplayWindowFrame
+import zoom_helper
 
 
 class ContentComparisonApp(customtkinter.CTk):
@@ -21,6 +22,8 @@ class ContentComparisonApp(customtkinter.CTk):
         self.paused = False
         self.images = None
         self.bind("<space>", self.on_space_pressed)
+
+        self.zoom_helper = zoom_helper.ZoomHelper(self.display_handler)
 
     def on_space_pressed(self, event):
         self.paused = not self.paused
@@ -78,19 +81,31 @@ class ContentComparisonApp(customtkinter.CTk):
         for image, title, title_pos in zip(images, current_methods, title_positions):
             image_utils.put_text(image, title, title_pos)
 
+        cropped_image = None
         # Set to self.output image incase mouse is out of bounds
         if mode == "Concat":
             self.output_image = np.hstack(images)
+            cropped_image = self.zoom_helper.crop_selected_region(images)
+            self.output_image = self.zoom_helper.highlight_zoom_region(self.output_image, num_images=len(images))
+
         elif mode == "Specific":
             method_idx = current_methods.index(method)
             self.output_image = images[method_idx]
+            cropped_image = self.zoom_helper.crop_selected_region([self.output_image])
+            self.output_image = self.zoom_helper.highlight_zoom_region(self.output_image)
         else:
             m_x, m_y = self.display_handler.mouse_position
             i_y, i_x = images[0].shape[:2]
             if 0 <= m_x < i_x and 0 <= m_y < i_y:
                 self.output_image = image_utils.merge_multiple_images(images[:4], self.display_handler.mouse_position)
+                cropped_image = self.zoom_helper.crop_selected_region([self.output_image])
+                self.output_image = self.zoom_helper.highlight_zoom_region(self.output_image)
 
-        self.display_handler.update_image(self.output_image)
+        self.output_image = self.zoom_helper.write_err_msgs(self.output_image)
+
+        display_image = np.vstack([self.output_image, cropped_image]) if cropped_image is not None else self.output_image
+
+        self.display_handler.update_image(display_image)
         self.after(10, self.display)
 
 
