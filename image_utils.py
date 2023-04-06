@@ -105,14 +105,15 @@ def merge_multiple_images(image_list: List[np.array], position: Tuple[int, int])
     return output_image
 
 
-def resize_scale(image, scale):
+def resize_scale(image, scale, interpolation=cv2.INTER_LINEAR):
     """
     Scale resize an image
     :param image: Image to resize
     :param scale: Scale for resizing.
+    :param interpolation: Interpolation method for resize operation.
     :return: Resized image
     """
     h, w, _ = image.shape
-    new_shape = (int(w * scale), int(h * scale))
-    image = cv2.resize(image, new_shape)
+    new_shape = (int(round(w * scale)), int(round(h * scale)))
+    image = cv2.resize(image, new_shape, interpolation=interpolation)
     return image
