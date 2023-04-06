@@ -23,7 +23,7 @@ class DisplayWindowFrame(customtkinter.CTkFrame):
         screen_h, screen_w = self.master.winfo_screenheight() * h_multiplier, self.master.winfo_screenwidth()
         if w > screen_w or h > screen_h:
             self.scale = 1 / max(w / screen_w, h / screen_h)
-            image = image_utils.resize_scale(image, scale=self.scale)
+            image = image_utils.resize_scale(image, scale=self.scale, interpolation=cv2.INTER_NEAREST)
             h, w, _ = image.shape
         else:
             self.scale = 1
