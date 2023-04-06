@@ -102,8 +102,6 @@ class ZoomHelper:
         if len(self.zoom_bbox_pts) != 2:
             return None
 
-        h, w, c = images[0].shape
-
         # Crop selected region from the images
         cropped_regions = []
         for image in images:
