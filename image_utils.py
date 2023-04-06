@@ -1,3 +1,4 @@
+from typing import Optional
 import numpy as np
 from typing import Tuple, List
 import enum
@@ -19,6 +20,9 @@ def put_text(
     font=cv2.FONT_HERSHEY_DUPLEX,
     scale=0.5,
     thickness=1,
+    bg_color: Tuple[int, int, int] = (0, 0, 0),
+    fg_color: Tuple[int, int, int] = (255, 255, 255),
+    background: Optional[int] = None,
     ) -> np.array:
     """
     Writes text in image according to the specified position
@@ -29,6 +33,9 @@ def put_text(
     :param font: font required by cv2.putText
     :param scale: scale required by cv2.putText
     :param thickness: thickness required by cv2.putText
+    :param bg_color: background text color in BGR [0, 255]
+    :param fg_color: foreground text color in BGR [0, 255]
+    :param background: sets background for text to value
     :return: Output image containing the text.
     """
 
@@ -44,9 +51,17 @@ def put_text(
     else:
         text_position = (img_width - text_width - buffer, img_height - text_height - buffer)
 
-    # black outline on white text
-    cv2.putText(img, text, text_position, font, scale, (0, 0, 0), thickness + 1)
-    cv2.putText(img, text, text_position, font, scale, (255, 255, 255), thickness)
+    if background is not None:
+        # text position = bottom right corner of bbox to put text in
+        start_x = text_position[0] - buffer
+        end_x = start_x + text_width + buffer * 2
+        end_y = text_position[1] + buffer
+        start_y = end_y - text_height - buffer * 2
+        img[start_y: end_y, start_x: end_x, :] = background
+
+    # Foreground text overlaid onto background for highlight effect
+    cv2.putText(img, text, text_position, font, scale, bg_color, thickness + 1)
+    cv2.putText(img, text, text_position, font, scale, fg_color, thickness)
 
 
 def merge_crop(img1: np.array, img2: np.array, position: Tuple[int, int], direction: str) -> np.array:

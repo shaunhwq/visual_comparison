@@ -89,14 +89,7 @@ class ZoomHelper:
         if self.error_message == "":
             return image
 
-        font, scale, thickness, buffer = cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, 1, 5
-        (text_width, text_height), baseline = cv2.getTextSize(self.error_message, font, scale, thickness)
-
-        # Set dark background for text
-        image[0: text_height + buffer * 2, 0: text_width, :] = 25
-
-        text_position = (0, buffer + text_height)
-        cv2.putText(image, self.error_message, text_position, cv2.FONT_HERSHEY_COMPLEX_SMALL, scale, color, thickness)
+        image_utils.put_text(image, self.error_message, fg_color=color, background=25)
         return image
 
     def crop_selected_region(self, images):
