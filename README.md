@@ -1,11 +1,11 @@
-# visual_comparison
+# Visual Comparison
 
-Ever have trouble comparing images/videos? This might be the tool for you if:
-1. You find it hard to observe minute differences between images
-2. Find it troublesome to generate side by side comparisons of images/videos
-3. Want to increase your comparison speed
+## <u> Introduction </u>
+A tool for comparing images & videos.
 
-Able to see the difference between various enhancement methods?
+Generally, for the image/video enhancement problem, differences between
+enhancement methods are hard to spot. Are you able to spot any differences between these enhanced images?
+
 ![](assets/hard_comparison.png)
 
 How about now?
@@ -16,7 +16,7 @@ How about now?
 | ![](assets/compare.gif) | ![](assets/specific.gif) | ![](assets/concat.png) |
 | Shows up to 4 files at once. Move mouse accordingly | Shows a single method based on what the user selected (with their keyboard) | Display all files horizontally. Still useful for images with large differences |
 
-Not clear enough?
+Interested in looking at small regions of the image?
 
 | Zoom (Compare) | Zoom (Specific) | Zoom (Concat) |
 | --- | --- | --- |
@@ -29,9 +29,15 @@ Many files or methods to compare?
 | ![](assets/navigation_ad_scroller.gif) | ![](assets/idx_method_buttons.gif) |
 | Navigate files using 'a', 'd' or arrow keys. Scroll to preview other files | Select which method to compare and jump to specific index |
 
-Note: Some compression between video to GIF so there are some distortions.
+If you found that this is better, perhaps this tool is for you.
+1. No need to generate comparison images/videos
+2. Use keyboard and mouse to quickly navigate and compare
+3. Various modes of operation for better and faster comparison
 
-## Installation
+Simply generate your enhanced images/videos, store it together with outputs from other methods and source images. Then,
+run the application, passing the path to the containing folder as an input.
+
+## <u> Installation </u>
 
 Either create a virtualenv or conda env. Tested on python 3.8. After activating,
 
@@ -39,34 +45,41 @@ Either create a virtualenv or conda env. Tested on python 3.8. After activating,
 pip3 install customtkinter opencv-python pillow tqdm
 ```
 
-## Usage
+## <u> Usage </u>
 
-### File Structure
-```
+### File Structure and Requirements
 File structure should be as follows:
 
+```
 root
-├── algorithm_name1
+├── method_1  # Should be name of algorithm
     ├── file1
     ├── file2
     └── ...
-├── algorithm_name2
+├── method_2
     ├── file1
     ├── file2
     └── ...
-└── ...
+└── source
+    ├── file1
+    ├── file2
+    └── ...
 ```
 
-- Note that only files which have the same name across <b><u>ALL</u></b> subdirectories will be retrieved.
-- Also, images & videos should all have the same size (since we need to overlay/crop and join them)
+- Requires a minimum of 2 folders since this is a comparison tool.
+- Recommended to store enhanced images in their own folder. File names must be exactly the same as the source file name.
+- Files which have the same name across <b><u>ALL</u></b> subdirectories will be retrieved.
+- Images & videos should all have the same size (since we need to overlay/crop and join them)
 
 ### Running the program
 ```
-usage: app.py [-h] --root ROOT
+usage: app.py [-h] --root ROOT [--source_folder SOURCE_FOLDER]
 
 optional arguments:
-  -h, --help   show this help message and exit
-  --root ROOT  Path to root directory
+  -h, --help            show this help message and exit
+  --root ROOT           Path to root directory
+  --source_folder SOURCE_FOLDER
+                        Name of source folder
 ```
 
 ### Instructions
