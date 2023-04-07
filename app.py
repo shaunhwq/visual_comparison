@@ -85,25 +85,24 @@ class ContentComparisonApp(customtkinter.CTk):
         cropped_image = None
         # Set to self.output image incase mouse is out of bounds
         if mode == "Concat":
-            self.output_image = np.hstack(images)
-            cropped_image = self.zoom_helper.crop_selected_region(images)
-            self.output_image = self.zoom_helper.highlight_zoom_region(self.output_image, num_images=len(images))
+            comparison_img = np.hstack(images)
+            cropped_image = self.zoom_helper.crop_regions(images)
+            self.output_image = self.zoom_helper.draw_regions(comparison_img, num_images=len(images))
 
         elif mode == "Specific":
             method_idx = current_methods.index(method)
-            self.output_image = images[method_idx]
-            cropped_image = self.zoom_helper.crop_selected_region([self.output_image])
-            self.output_image = self.zoom_helper.highlight_zoom_region(self.output_image)
+            comparison_img = images[method_idx]
+            cropped_image = self.zoom_helper.crop_regions([comparison_img])
+            self.output_image = self.zoom_helper.draw_regions(comparison_img)
         else:
             m_x, m_y = self.display_handler.mouse_position
             i_y, i_x = images[0].shape[:2]
             if 0 <= m_x < i_x and 0 <= m_y < i_y:
-                self.output_image = image_utils.merge_multiple_images(images[:4], self.display_handler.mouse_position)
-                cropped_image = self.zoom_helper.crop_selected_region([self.output_image])
-                self.output_image = self.zoom_helper.highlight_zoom_region(self.output_image)
+                comparison_img = image_utils.merge_multiple_images(images[:4], self.display_handler.mouse_position)
+                cropped_image = self.zoom_helper.crop_regions([comparison_img])
+                self.output_image = self.zoom_helper.draw_regions(comparison_img)
 
-        self.output_image = self.zoom_helper.write_err_msgs(self.output_image)
-
+        # Cropped image is displayed below original image
         display_image = np.vstack([self.output_image, cropped_image]) if cropped_image is not None else self.output_image
 
         self.display_handler.update_image(display_image)
