@@ -1,10 +1,35 @@
 # visual_comparison
-A tool for comparing images &amp; videos.
 
-| Compare (Up to 4)                                   | Show Specific                                                               | Concatenate                    |
-|-----------------------------------------------------|-----------------------------------------------------------------------------|--------------------------------|
-| ![](assets/compare.gif)                             | ![](assets/specific.gif)                                                    | ![](assets/concat.png)         |
-| Shows up to 4 files at once. Move mouse accordingly | Shows a single method based on what the user selected (with their keyboard) | Display all files horizontally |
+Ever have trouble comparing images/videos? This might be the tool for you if:
+1. You find it hard to observe minute differences between images
+2. Find it troublesome to generate side by side comparisons of images/videos
+3. Want to increase your comparison speed
+
+Able to see the difference between various enhancement methods?
+![](assets/hard_comparison.png)
+
+How about now?
+![]()
+
+| Compare (Up to 4) | Show Specific | Concat |
+| --- | --- | --- |
+| ![](assets/compare.gif) | ![](assets/specific.gif) | ![](assets/concat.png) |
+| Shows up to 4 files at once. Move mouse accordingly | Shows a single method based on what the user selected (with their keyboard) | Display all files horizontally. Still useful for images with large differences |
+
+Not clear enough?
+
+| Zoom (Compare) | Zoom (Specific) | Zoom (Concat) |
+| --- | --- | --- |
+| ![](assets/zoom_compare.gif) | ![](assets/zoom_specific.gif) | ![](assets/zoom_concat.png) |
+
+Many files or methods to compare?
+
+| Mouse/Keyboard Control | Button Control |
+| --- | --- |
+| ![](assets/navigation_ad_scroller.gif) | ![](assets/idx_method_buttons.gif) |
+| Navigate files using 'a', 'd' or arrow keys. Scroll to preview other files | Select which method to compare and jump to specific index |
+
+Note: Some compression between video to GIF so there are some distortions.
 
 ## Installation
 
@@ -56,3 +81,11 @@ optional arguments:
 | Click in preview window | Changes to selected file |
 | Click on "Method:" | Popup appears to select methods to show |
 | Click on "Idx:" | Popup appears to change to index, must be int and < number files |
+
+#### Zooming
+
+| Action | Description |
+| --- | --- |
+| Click on image once | Filled circle appears on screen to indicate first point |
+| Click on image again | Rectangle will appear on screen, and crop region will be displayed together with the original |
+| Click on image again (with 2 points) | Toggle between frozen and unfrozen bounding box |
