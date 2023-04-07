@@ -7,7 +7,7 @@ import numpy as np
 import image_utils
 
 
-class ZoomHelper:
+class ZoomManager:
     def __init__(self, display_widget):
         """
         :param display_widget: For binding keys to the widget and getting mouse position
