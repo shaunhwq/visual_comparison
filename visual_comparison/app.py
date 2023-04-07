@@ -1,14 +1,12 @@
-import argparse
 import numpy as np
 import customtkinter
-import image_utils
-from content_manager import ContentManager
-from widget_mode_methods import ModeMethodsControllerFrame, AppStatus
-from widget_display import DisplayWindowFrame
-import zoom_manager
+
+from .managers import ZoomManager, ContentManager
+from .widgets import DisplayWidget, ModeMethodsControllerFrame, AppStatus
+from .utils import image_utils as image_utils
 
 
-class ContentComparisonApp(customtkinter.CTk):
+class VisualComparisonApp(customtkinter.CTk):
     def __init__(self, root, src_folder_name="source"):
         super().__init__()
         self.content_handler = ContentManager(root, src_folder_name)
@@ -16,14 +14,14 @@ class ContentComparisonApp(customtkinter.CTk):
         self.mode_methods_handler = ModeMethodsControllerFrame(root, self.content_handler.methods, self.content_handler.files, master=self)
         self.mode_methods_handler.grid(row=0, column=0)
         self.video_controller = customtkinter.CTkSlider(master=self, from_=0, to=100, width=720, command=self.content_handler.set_video_position)
-        self.display_handler = DisplayWindowFrame(self)
+        self.display_handler = DisplayWidget(self)
         self.display_handler.grid(row=2, column=0)
 
         self.paused = False
         self.images = None
         self.bind("<space>", self.on_space_pressed)
 
-        self.zoom_manager = zoom_manager.ZoomManager(self.display_handler)
+        self.zoom_manager = ZoomManager(self.display_handler)
 
     def on_space_pressed(self, event):
         self.paused = not self.paused
@@ -109,17 +107,3 @@ class ContentComparisonApp(customtkinter.CTk):
         self.after(10, self.display)
 
 
-if __name__ == "__main__":
-    # Modes: "System" (standard), "Dark", "Light"
-    customtkinter.set_appearance_mode("System")
-    # Themes: "blue" (standard), "green", "dark-blue"
-    customtkinter.set_default_color_theme("dark-blue")
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--root", type=str, help="Path to root directory", required=True)
-    parser.add_argument("--source_folder", type=str, help="Name of source folder", default="source")
-    opt = parser.parse_args()
-
-    app = ContentComparisonApp(root=opt.root, src_folder_name=opt.source_folder)
-    app.after(200, app.display)
-    app.mainloop()

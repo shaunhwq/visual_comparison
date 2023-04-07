@@ -1,59 +1,76 @@
-import os
+from typing import List
+from concurrent.futures import ThreadPoolExecutor
+
+from tqdm import tqdm
 import tkinter
-import tkinter as tk
+import customtkinter
 from tkinter import ttk
 import PIL.Image
-import customtkinter
-import cv2
 from PIL.ImageTk import PhotoImage
-from concurrent.futures import ThreadPoolExecutor
-import glob
-import time
-from tqdm import tqdm
+
+from ..utils import file_utils
 
 
-class ScrollViewer(customtkinter.CTkFrame):
-    def __init__(self, source_folder, common_files, callback, *args, **kwargs):
+__all__ = ["PreviewWidget"]
+
+
+class PreviewWidget(customtkinter.CTkFrame):
+    def __init__(self, *args, **kwargs):
+        """
+        A complex widget to allow users to preview images/videos. When clicked, callback is called with the id of the
+        clicked button.
+
+        As we might have to load a large number of images (e.g. 10k images), tkinter is unable to display all of them.
+        Thus, we need to load them in batches.
+        """
         super().__init__(*args, **kwargs)
 
-        paths = []
-        for i in range(len(common_files)):
-            uncomplete_path = os.path.join(source_folder, common_files[i]) + ".*"
-            paths.append(glob.glob(uncomplete_path)[0])
-
-        # Need to change to use glob to read later on because we will depend on the items in the set.
-        paths.sort()
-        with ThreadPoolExecutor() as executor:
-            images = list(tqdm(executor.map(self._load_img_thumbnail, paths), desc="Loading thumbnails...", total=len(paths)))
-
-        canvas_viewport = tk.Canvas(self, height=80, width=720)
-        scrollable_frame = ttk.Frame(canvas_viewport)
+        self.canvas_viewport = tkinter.Canvas(self, height=80, width=720)
+        self.scrollable_frame = ttk.Frame(self.canvas_viewport)
 
         # When we add a new object the total frame will extend accordingly
-        scrollable_frame.bind("<Configure>", lambda e: canvas_viewport.configure(scrollregion=canvas_viewport.bbox("all")))
+        self.scrollable_frame.bind("<Configure>", lambda e: self.canvas_viewport.configure(scrollregion=self.canvas_viewport.bbox("all")))
 
         # Create viewport
-        canvas_viewport.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        self.canvas_viewport.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
 
         # Bind mousewheel to allow horizontal scrolling
-        canvas_viewport.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.canvas_viewport.bind_all("<MouseWheel>", self._on_mousewheel)
 
         self.selected_idx = 0
         self.view_radius = 100
         self.view_index = -1000
 
         self.buttons = []
+
+        self.canvas_viewport.grid(row=0, sticky="nsew")
+
+    def populate_preview_window(self, file_paths: List[str], callback) -> None:
+        """
+        Load content
+        :param file_paths: List of path to files from which we extract thumbnails
+        :param callback: Callback for button when clicked
+        :return:
+        """
+        # Destroy any existing buttons, for changing directories
+        for button in self.buttons:
+            button.destroy()
+
+        # Load images for preview window. Multi thread for faster reading.
+        with ThreadPoolExecutor() as executor:
+            images = list(tqdm(iterable=executor.map(file_utils.load_img_thumbnail, file_paths),
+                               desc="Loading thumbnails...",
+                               total=len(file_paths)))
+
+        # Create buttons
         for i, image in enumerate(images):
             image_pil = PIL.Image.fromarray(image)
             photo_img = PhotoImage(image_pil)
-            button = tk.Button(master=scrollable_frame, image=photo_img, command=lambda i=i: callback(i), borderwidth=0)
+            button = tkinter.Button(master=self.scrollable_frame, image=photo_img, command=lambda i=i: callback(i), borderwidth=0)
             button.image = photo_img
             self.buttons.append(button)
 
-        self.canvas_viewport = canvas_viewport
-        self.scrollable_frame = scrollable_frame
-        canvas_viewport.grid(row=0, sticky="nsew")
-
+        # Visualize
         self.highlight_selected(0)
 
     def get_index_min_max(self, index):
@@ -79,7 +96,6 @@ class ScrollViewer(customtkinter.CTkFrame):
         for idx in show_idxs:
             self.buttons[idx].grid(row=0, column=idx)
 
-        # print(f"Hide: {len(hide_idxs)}, Show: {len(show_idxs)}, Keep: {len(keep_idxs)}")
         self.scrollable_frame.update_idletasks()
 
     def set_view_by_index(self, index, position="center"):
@@ -111,8 +127,6 @@ class ScrollViewer(customtkinter.CTkFrame):
             # print("Updating objects")
             self.place_objects(self.view_index, index)
             self.view_index = index
-
-        # print(f"{round((time.time() - t1) * 1000, 2)} ms")
 
         # Reset previous button
         prev_button = self.buttons[self.selected_idx]
@@ -150,21 +164,3 @@ class ScrollViewer(customtkinter.CTkFrame):
                     self.view_index = new_index
             else:
                 self.canvas_viewport.xview_scroll(-1 * int(event.delta), "units")
-
-    @staticmethod
-    def _load_img_thumbnail(img_path, max_height=75):
-        ext = os.path.splitext(os.path.basename(img_path))[-1].lower()
-        if ext in {".png", ".jpg"}:
-            img = cv2.imread(img_path, -1)
-        elif ext in {".mp4", ".avi"}:
-            cap = cv2.VideoCapture(img_path)
-            ret, img = cap.read()
-            cap.release()
-        else:
-            raise NotImplementedError(f"Unsupported ext for scrollviewer: {ext}")
-
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        h, w, _ = img.shape
-        scale = max_height / h
-        img = cv2.resize(img, (int(w * scale), int(h * scale)))
-        return img

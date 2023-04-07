@@ -1,11 +1,14 @@
 import customtkinter
 import cv2
 import platform
-import image_utils
+from ..utils import image_utils as image_utils
 from PIL import Image
 
 
-class DisplayWindowFrame(customtkinter.CTkFrame):
+__all__ = ["DisplayWidget"]
+
+
+class DisplayWidget(customtkinter.CTkFrame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

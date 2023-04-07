@@ -4,7 +4,10 @@ import tkinter
 import cv2
 import numpy as np
 
-import image_utils
+from ..utils import image_utils
+
+
+__all__ = ["ZoomManager"]
 
 
 class ZoomManager:

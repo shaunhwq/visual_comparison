@@ -1,8 +1,14 @@
-import customtkinter
-import widget_scrollviewer
-import enum
 import os
+import enum
 import glob
+
+import customtkinter
+
+from .widget_preview import PreviewWidget
+from .widget_multi_select_pop_up import MultiSelectPopUpWidget
+
+
+__all__ = ["AppStatus", "ModeMethodsControllerFrame"]
 
 
 class AppStatus(enum.Enum):
@@ -27,7 +33,16 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
 
         # For changing selected files & methods
         # TODO: Hardcoded source folder
-        self.scroll_viewer = widget_scrollviewer.ScrollViewer(os.path.join(root, "source"), files, self.on_specify_index, master=self)
+        self.scroll_viewer = PreviewWidget(master=self)
+
+        # File path completion for source folder
+        paths = []
+        for i in range(len(files)):
+            uncomplete_path = os.path.join(os.path.join(root, "source"), files[i]) + ".*"
+            paths.append(glob.glob(uncomplete_path)[0])
+        paths.sort()
+
+        self.scroll_viewer.populate_preview_window(paths, self.on_specify_index)
         self.scroll_viewer.grid(row=0, column=0, columnspan=3)
         change_method_file_frame = customtkinter.CTkFrame(master=self)
         button_prev = customtkinter.CTkButton(master=change_method_file_frame, text="<", command=self.on_prev, width=30, height=25)
@@ -139,7 +154,7 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
             self.bind_hotkeys()
             self.update_status = AppStatus.UPDATE_FILE.UPDATE_METHOD
 
-        MethodsSelectionPopUp(all_methods=self.methods, current_methods=self.curr_methods, app_callback=set_new_methods)
+        MultiSelectPopUpWidget(all_options=self.methods, current_options=self.curr_methods, app_callback=set_new_methods)
 
     def bind_hotkeys(self):
         self.master.bind("a", lambda event: self.on_prev())
@@ -154,59 +169,3 @@ class ModeMethodsControllerFrame(customtkinter.CTkFrame):
             self.master.bind(str(i + 1), lambda event: self.on_change_mode("Specific", self.curr_methods[int(event.keysym) - 1]))
             # Bind keypad
             self.master.bind(f"<KP_{i + 1}>", lambda event: self.on_change_mode("Specific", self.curr_methods[int(event.keysym.split("_")[1]) - 1]))
-
-
-class MethodsSelectionPopUp(customtkinter.CTkToplevel):
-    def __init__(self, all_methods, current_methods, app_callback):
-        super().__init__()
-        self.app_callback = app_callback
-
-        reset_button = customtkinter.CTkButton(master=self, text="Reset", command=self._on_reset_pressed)
-        reset_button.pack(padx=5, pady=5)
-        ok_button = customtkinter.CTkButton(master=self, text="Confirm", command=self._on_ok_pressed)
-        ok_button.pack(padx=5, pady=5)
-
-        # Sort by current methods then remainder
-        sorted_methods = list(current_methods)
-        method_set = set(current_methods)
-        for method in all_methods:
-            if method not in method_set:
-                sorted_methods.append(method)
-
-        self.checkboxes = []
-        for i, method_name in enumerate(sorted_methods):
-            checkbox = customtkinter.CTkCheckBox(master=self, text=method_name, command=self._on_checkbox_checked, onvalue=i + 1, offvalue=0)
-            checkbox.pack()
-            if i < len(current_methods):
-                checkbox.select()
-            self.checkboxes.append(checkbox)
-
-        # Prevent user interaction
-        self.grab_set()
-
-        self.mainloop()
-
-    def _on_checkbox_checked(self):
-        new_list = [checkbox for checkbox in self.checkboxes if checkbox.get()]
-        remaining = [checkbox for checkbox in self.checkboxes if not checkbox.get()]
-        remaining.sort(key=lambda checkbox: checkbox.cget("text"))
-        new_list += remaining
-        for checkbox in new_list:
-            checkbox.pack_forget()
-        for checkbox in new_list:
-            checkbox.pack()
-        self.checkboxes = new_list
-
-    def _on_reset_pressed(self):
-        self.checkboxes.sort(key=lambda checkbox: checkbox.cget("text"))
-        for checkbox in self.checkboxes:
-            checkbox.pack_forget()
-        for checkbox in self.checkboxes:
-            checkbox.pack()
-        for checkbox in self.checkboxes:
-            checkbox.deselect()
-
-    def _on_ok_pressed(self):
-        methods_to_display = [checkbox.cget("text") for checkbox in self.checkboxes if checkbox.get()]
-        self.app_callback(methods_to_display)
-        self.destroy()

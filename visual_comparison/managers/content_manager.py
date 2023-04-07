@@ -1,30 +1,11 @@
-import cv2
 import os
 
+import cv2
 
-def get_methods(root, src_folder_name):
-    # Contains method name (folder name)
-    methods = [folder for folder in os.listdir(root) if folder[0] != "."]
-    if src_folder_name in methods:
-        methods.insert(0, methods.pop(methods.index(src_folder_name)))
-    assert len(methods) > 1, "Need more than 1 folder for comparison"
-    return methods
+from ..utils import file_utils
 
 
-def get_filenames(root, folders):
-    # Finding common files for comparison, should have the same filename (without extension)
-    common_files = None
-    for folder in folders:
-        folder_path = os.path.join(root, folder)
-        file_paths = [os.path.splitext(file_path)[0] for file_path in os.listdir(folder_path) if file_path[0] != "."]
-        common_files = set(file_paths) if common_files is None else common_files.intersection(set(file_paths))
-
-    # Contains files with same names across all sub-directories for comparison
-    assert common_files, "No files in common"
-    common_files = list(common_files)
-    common_files.sort()
-
-    return common_files
+__all__ = ["ContentManager"]
 
 
 class ImageCapture:
@@ -42,11 +23,14 @@ class ImageCapture:
 
 class ContentManager:
     def __init__(self, root, src_folder_name):
-        self.methods = get_methods(root, src_folder_name)
-        self.files = get_filenames(root, self.methods)
+        self.methods = file_utils.get_folders(root, src_folder_name)
+        self.files = file_utils.get_filenames(root, self.methods)
 
         self.content_loaders = None
         self.video_indices = []
+
+        self.current_index = 0
+        self.current_methods = list(self.methods)
 
     def load_files(self, paths):
         self.content_loaders = []
