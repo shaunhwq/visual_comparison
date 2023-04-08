@@ -1,12 +1,14 @@
 import os
 import cv2
+import glob
 from typing import List
 
 
 __all__ = [
     "get_folders",
     "get_filenames",
-    "load_img_thumbnail"
+    "load_img_thumbnail",
+    "complete_paths",
 ]
 
 
@@ -62,3 +64,13 @@ def load_img_thumbnail(img_path, max_height=75):
     scale = max_height / h
     img = cv2.resize(img, (int(w * scale), int(h * scale)))
     return img
+
+
+def complete_paths(root, folder, common_names):
+    paths = []
+    for i in range(len(common_names)):
+        uncomplete_path = os.path.join(os.path.join(root, folder), common_names[i]) + ".*"
+        paths.append(glob.glob(uncomplete_path)[0])
+    paths.sort()
+
+    return paths

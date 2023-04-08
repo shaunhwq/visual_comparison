@@ -1,1 +1,1 @@
-from .app import VisualComparisonApp
+from .visual_comparison_app import VisualComparisonApp

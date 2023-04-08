@@ -1,7 +1,7 @@
 import customtkinter
 
 
-__all__ = ["MultiSelectPopUpWidget"]
+__all__ = ["MultiSelectPopUpWidget", "get_user_input"]
 
 
 class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
@@ -63,3 +63,11 @@ class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
         methods_to_display = [checkbox.cget("text") for checkbox in self.checkboxes if checkbox.get()]
         self.app_callback(methods_to_display)
         self.destroy()
+
+
+def get_user_input(text, title):
+    dialog = customtkinter.CTkInputDialog(text=text, title=title)
+    # Prevent user interaction
+    dialog.grab_set()
+    dialog_str = dialog.get_input()
+    return dialog_str

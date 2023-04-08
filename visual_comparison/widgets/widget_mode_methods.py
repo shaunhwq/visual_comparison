@@ -1,171 +1,55 @@
-import os
-import enum
-import glob
-
 import customtkinter
-
-from .widget_preview import PreviewWidget
-from .widget_multi_select_pop_up import MultiSelectPopUpWidget
+from ..enums import VCModes
 
 
-__all__ = ["AppStatus", "ModeMethodsControllerFrame"]
+__all__ = ["ModeMethodWidget"]
 
 
-class AppStatus(enum.Enum):
-    UPDATE_MODE = enum.auto()
-    UPDATE_FILE = enum.auto()
-    UPDATE_METHOD = enum.auto()
-    UPDATED = enum.auto()
-
-
-class ModeMethodsControllerFrame(customtkinter.CTkFrame):
-    def __init__(self, root, methods, files, *args, **kwargs):
+class ModeMethodWidget(customtkinter.CTkFrame):
+    def __init__(self, mm_callbacks, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.root = root
-        self.methods = methods
-        self.curr_methods = list(methods)
-        self.files = files
 
-        # Maintains the selected method & function for the app
-        self.internal_state = {}
-        self._reset_internal_state()
-        self.update_status = AppStatus.UPDATE_FILE
-
-        # For changing selected files & methods
-        # TODO: Hardcoded source folder
-        self.scroll_viewer = PreviewWidget(master=self)
-
-        # File path completion for source folder
-        paths = []
-        for i in range(len(files)):
-            uncomplete_path = os.path.join(os.path.join(root, "source"), files[i]) + ".*"
-            paths.append(glob.glob(uncomplete_path)[0])
-        paths.sort()
-
-        self.scroll_viewer.populate_preview_window(paths, self.on_specify_index)
-        self.scroll_viewer.grid(row=0, column=0, columnspan=3)
-        change_method_file_frame = customtkinter.CTkFrame(master=self)
-        button_prev = customtkinter.CTkButton(master=change_method_file_frame, text="<", command=self.on_prev, width=30, height=25)
+        frame_00 = customtkinter.CTkFrame(master=self)
+        button_prev = customtkinter.CTkButton(master=frame_00, text="<", command=mm_callbacks["on_prev"], width=30, height=25)
         button_prev.grid(row=1, column=0, padx=5)
-        button_method = customtkinter.CTkButton(master=change_method_file_frame, text="Method:", command=self.on_select_methods, width=50, height=25)
+        button_method = customtkinter.CTkButton(master=frame_00, text="Method:", command=mm_callbacks["on_select_methods"], width=50, height=25)
         button_method.grid(row=1, column=1, padx=5)
-        button_select_specific = customtkinter.CTkButton(master=change_method_file_frame, text="Idx:", command=self.on_specify_index, width=50, height=25)
+        button_select_specific = customtkinter.CTkButton(master=frame_00, text="Idx:", command=mm_callbacks["on_specify_index"], width=50, height=25)
         button_select_specific.grid(row=1, column=2, padx=5)
-        button_next = customtkinter.CTkButton(master=change_method_file_frame, text=">", command=self.on_next, width=30, height=25)
+        button_next = customtkinter.CTkButton(master=frame_00, text=">", command=mm_callbacks["on_next"], width=30, height=25)
         button_next.grid(row=1, column=3, padx=5)
-        change_method_file_frame.grid(row=1, column=0)
-        self.current_index = 0
+        frame_00.grid(row=0, column=0)
 
         # For controlling modes
-        self.modes = ["Compare", "Concat", "Specific"]
-        modes_frame = customtkinter.CTkFrame(master=self)
-        self.s_button_modes = customtkinter.CTkSegmentedButton(master=modes_frame, values=self.modes, command=lambda mode: self.on_change_mode(mode, self.curr_methods[0]))
-        self.s_button_modes.pack()
-        modes_frame.grid(row=1, column=1)
+        frame_01 = customtkinter.CTkFrame(master=self)
+        self.modes_button = customtkinter.CTkSegmentedButton(master=frame_01)
+        self.modes_button.pack()
+        frame_01.grid(row=0, column=1)
 
         # For changing to 'Specific' mode
-        self.methods_frame = customtkinter.CTkFrame(master=self)
-        self.s_button_methods = customtkinter.CTkSegmentedButton(master=self.methods_frame, values=self.curr_methods, command=lambda value: self.on_change_mode("Specific", value))
-        self.s_button_methods.pack()
+        frame_10 = customtkinter.CTkFrame(master=self)
+        self.methods_button = customtkinter.CTkSegmentedButton(master=frame_10)  # Populate later
+        self.methods_button.pack()
+        self.method_frame = frame_10
 
-        self.bind_hotkeys()
-
-    def _reset_internal_state(self):
-        self.internal_state = {"mode": "Compare", "method": "None"}
-
-    def get_window_title(self):
-        title = f"[{self.current_index}/{len(self.files)}] {self.files[self.current_index]}"
-        return title
-
-    def get_paths(self):
-        output_paths = []
-        # TODO: Optimize. I think this is a O(n^2) method, if we use dict to map could reduce to O(n)
-        for method in self.curr_methods:
-            incomplete_path = os.path.join(self.root, method, self.files[self.current_index])
-            completed_paths = glob.glob(incomplete_path + ".*")
-            assert len(completed_paths) == 1, completed_paths
-            output_paths.append(completed_paths[0])
-
-        return output_paths
-
-    def on_change_mode(self, mode, method):
-        if mode == "Compare":
-            self.methods_frame.grid_remove()
-        elif mode == "Concat":
-            self.methods_frame.grid_remove()
+    def show_method_button(self, show=True):
+        if show:
+            self.method_frame.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
         else:
-            if method == self.internal_state["method"] and self.internal_state["mode"] == "Specific":
-                self.methods_frame.grid_remove()
-                self.s_button_modes.set("Compare")
-                self._reset_internal_state()
-                return
-            else:
-                self.s_button_modes.set("Specific")
-                self.s_button_methods.set(method)
-                self.methods_frame.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+            self.method_frame.grid_remove()
 
-        self.internal_state = {"mode": mode, "method": method}
-        self.update_status = AppStatus.UPDATE_MODE
+    def populate_methods_button(self, methods, callback):
+        self.methods_button.configure(values=methods, command=lambda value: callback(VCModes.Specific, value))
 
-    def on_specify_index(self, index=None):
-        if index is None:
-            dialog = customtkinter.CTkInputDialog(text="Enter an index:", title="Specify file index")
-            # Prevent user interaction
-            dialog.grab_set()
-            dialog_str = dialog.get_input()
+    def set_method(self, method):
+        self.methods_button.set(method)
 
-            if dialog_str == "" or dialog_str is None:
-                print("Empty String")
-                return
-            try:
-                value = int(dialog_str)
-            except ValueError:
-                print(f"Invalid option: {dialog_str}")
-                return
-        else:
-            value = index
-        if 0 <= value < len(self.files):
-            self.current_index = value
-        else:
-            print(f"Value out of range: {value}")
-        self.scroll_viewer.highlight_selected(self.current_index)
-        self.update_status = AppStatus.UPDATE_FILE
+    def populate_mode_button(self, modes, callback):
+        mode_names = [e.name for e in modes]
+        ref_dict = {e.name: e for e in modes}
+        self.modes_button.configure(values=mode_names, command=lambda mode_str: callback(ref_dict[mode_str]))
 
-    def on_prev(self):
-        self.current_index = max(0, self.current_index - 1)
-        self.scroll_viewer.highlight_selected(self.current_index)
-        self.update_status = AppStatus.UPDATE_FILE
+    def set_mode(self, mode_enum):
+        self.modes_button.set(mode_enum.name)
 
-    def on_next(self):
-        self.current_index = min(len(self.files) - 1, self.current_index + 1)
-        self.scroll_viewer.highlight_selected(self.current_index)
-        self.update_status = AppStatus.UPDATE_FILE
 
-    def on_select_methods(self):
-        def set_new_methods(new_methods):
-            if len(new_methods) < 2:
-                print(f"Please select more than 2 methods")
-                return
-            self.curr_methods = new_methods
-            self.s_button_modes.set("Compare")
-            self.methods_frame.grid_remove()
-            self._reset_internal_state()
-            self.s_button_methods.configure(values=new_methods, command=lambda value: self.on_change_mode(self.modes[2], value))
-            self.bind_hotkeys()
-            self.update_status = AppStatus.UPDATE_FILE.UPDATE_METHOD
-
-        MultiSelectPopUpWidget(all_options=self.methods, current_options=self.curr_methods, app_callback=set_new_methods)
-
-    def bind_hotkeys(self):
-        self.master.bind("a", lambda event: self.on_prev())
-        self.master.bind("<Left>", lambda event: self.on_prev())
-        self.master.bind("d", lambda event: self.on_next())
-        self.master.bind("<Right>", lambda event: self.on_next())
-
-        for i in range(10):
-            self.master.unbind(str(i))
-        for i in range(min(len(self.curr_methods), 9)):
-            # Bind number keys
-            self.master.bind(str(i + 1), lambda event: self.on_change_mode("Specific", self.curr_methods[int(event.keysym) - 1]))
-            # Bind keypad
-            self.master.bind(f"<KP_{i + 1}>", lambda event: self.on_change_mode("Specific", self.curr_methods[int(event.keysym.split("_")[1]) - 1]))
