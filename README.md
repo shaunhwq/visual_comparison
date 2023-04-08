@@ -6,27 +6,27 @@ A tool for comparing images & videos.
 Generally, for the image/video enhancement problem, differences between
 enhancement methods are hard to spot. Are you able to spot any differences between these enhanced images?
 
-![](assets/hard_comparison.png)
+![](documentation_images/hard_comparison.png)
 
 How about now?
 ![]()
 
 | Compare (Up to 4) | Show Specific | Concat |
 | --- | --- | --- |
-| ![](assets/compare.gif) | ![](assets/specific.gif) | ![](assets/concat.png) |
+| ![](documentation_images/compare.gif) | ![](documentation_images/specific.gif) | ![](documentation_images/concat.png) |
 | Shows up to 4 files at once. Move mouse accordingly | Shows a single method based on what the user selected (with their keyboard) | Display all files horizontally. Still useful for images with large differences |
 
 Interested in looking at small regions of the image?
 
 | Zoom (Compare) | Zoom (Specific) | Zoom (Concat) |
 | --- | --- | --- |
-| ![](assets/zoom_compare.gif) | ![](assets/zoom_specific.gif) | ![](assets/zoom_concat.png) |
+| ![](documentation_images/zoom_compare.gif) | ![](documentation_images/zoom_specific.gif) | ![](documentation_images/zoom_concat.png) |
 
 Many files or methods to compare?
 
 | Mouse/Keyboard Control | Button Control |
 | --- | --- |
-| ![](assets/navigation_ad_scroller.gif) | ![](assets/idx_method_buttons.gif) |
+| ![](documentation_images/navigation_ad_scroller.gif) | ![](documentation_images/idx_method_buttons.gif) |
 | Navigate files using 'a', 'd' or arrow keys. Scroll to preview other files | Select which method to compare and jump to specific index |
 
 If you found that this is better, perhaps this tool is for you.
