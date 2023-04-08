@@ -73,7 +73,7 @@ root
 
 ### Running the program
 ```
-usage: app.py [-h] --root ROOT [--source_folder SOURCE_FOLDER]
+usage: run.py [-h] --root ROOT [--source_folder SOURCE_FOLDER]
 
 optional arguments:
   -h, --help            show this help message and exit
