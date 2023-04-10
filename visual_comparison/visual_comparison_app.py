@@ -52,7 +52,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.mm_widget.populate_mode_button(VCModes, self.on_change_mode)
         self.mm_widget.grid(row=1, column=0)
 
-        self.video_controller = customtkinter.CTkSlider(master=self, from_=0, to=100, width=720, command=self.content_handler.set_video_position)
+        self.video_controller = customtkinter.CTkSlider(master=self, from_=0, to=100, width=720, command=self.on_set_video_position)
         self.display_handler = DisplayWidget(self)
         self.display_handler.grid(row=3, column=0)
 
@@ -93,6 +93,13 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def on_space(self, event):
         self.app_status.VIDEO_PAUSED = not self.app_status.VIDEO_PAUSED
+
+    def on_set_video_position(self, value):
+        self.content_handler.set_video_position(value)
+        # self.app_status.VIDEO_PAUSED = True
+        ret, images = self.content_handler.read_frames()
+        if ret:
+            self.images = images
 
     def on_specify_index(self, index=None):
         if index is None:
