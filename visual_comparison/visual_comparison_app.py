@@ -155,7 +155,7 @@ class VisualComparisonApp(customtkinter.CTk):
             # Show or hide video controller
             if self.content_handler.has_video():
                 if len(self.video_controller.grid_info()) == 0:
-                    self.video_controller.grid(row=1, column=0)
+                    self.video_controller.grid(row=2, column=0)
             else:
                 self.video_controller.grid_forget()
 
