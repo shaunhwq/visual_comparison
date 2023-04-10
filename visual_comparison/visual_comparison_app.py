@@ -16,11 +16,13 @@ class VCInternalState:
     MODE: VCModes = VCModes.Compare
     STATE: VCState = VCState.UPDATE_FILE
     METHOD: Optional[str] = None
+    VIDEO_PAUSED: bool = False
 
     def reset(self):
         self.MODE = VCModes.Compare
         self.STATE = VCState.UPDATE_FILE
         self.METHOD = None
+        self.VIDEO_PAUSED = False
 
 
 class VisualComparisonApp(customtkinter.CTk):
@@ -54,7 +56,6 @@ class VisualComparisonApp(customtkinter.CTk):
         self.display_handler = DisplayWidget(self)
         self.display_handler.grid(row=3, column=0)
 
-        self.paused = False
         self.images = None
         self.bind("a", self.on_prev)
         self.bind("d", self.on_next)
@@ -91,7 +92,7 @@ class VisualComparisonApp(customtkinter.CTk):
         MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods, app_callback=set_new_methods)
 
     def on_space(self, event):
-        self.paused = not self.paused
+        self.app_status.VIDEO_PAUSED = not self.app_status.VIDEO_PAUSED
 
     def on_specify_index(self, index=None):
         if index is None:
@@ -148,10 +149,10 @@ class VisualComparisonApp(customtkinter.CTk):
             self.content_handler.load_files(self.content_handler.get_paths())
             self.display_handler.mouse_position = (0, 0)
             self.app_status.STATE = VCState.UPDATED
-            self.paused = False
+            self.app_status.VIDEO_PAUSED = False
             self.zoom_manager.reset()
 
-        if not self.paused:
+        if not self.app_status.VIDEO_PAUSED:
             # Show or hide video controller
             if self.content_handler.has_video():
                 if len(self.video_controller.grid_info()) == 0:
@@ -167,7 +168,7 @@ class VisualComparisonApp(customtkinter.CTk):
             ret, images = self.content_handler.read_frames()
 
             if not ret:
-                self.paused = True
+                self.app_status.VIDEO_PAUSED = True
                 images = self.images
             else:
                 self.images = images
