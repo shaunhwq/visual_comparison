@@ -197,7 +197,6 @@ class VisualComparisonApp(customtkinter.CTk):
         for image, title, title_pos in zip(images, current_methods, title_positions):
             image_utils.put_text(image, title, title_pos)
 
-        cropped_image = None
         # Set to self.output image incase mouse is out of bounds
         if self.app_status.MODE == VCModes.Concat:
             comparison_img = np.hstack(images)
