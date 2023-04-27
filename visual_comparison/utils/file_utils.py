@@ -57,7 +57,7 @@ def load_img_thumbnail(img_path, max_height=75):
         ret, img = cap.read()
         cap.release()
     else:
-        raise NotImplementedError(f"Unsupported ext for scrollviewer: {ext}")
+        raise NotImplementedError(f"Unsupported ext for loading image thumbnail: {ext}")
 
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     h, w, _ = img.shape
