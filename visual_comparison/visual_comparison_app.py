@@ -257,4 +257,8 @@ class VisualComparisonApp(customtkinter.CTk):
         display_image = np.vstack([self.output_image, self.cropped_image]) if self.cropped_image is not None else self.output_image
 
         self.display_handler.update_image(display_image)
-        self.after(10, self.display)
+
+        # Refresh slower if in background to minimize cpu usage
+        out_of_focus = self.focus_get() is None
+        refresh_after = 500 if out_of_focus else 10
+        self.after(refresh_after, self.display)
