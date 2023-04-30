@@ -6,7 +6,7 @@ import numpy as np
 import customtkinter
 
 from .managers import ZoomManager, ContentManager
-from .widgets import DisplayWidget, ModeMethodWidget, MultiSelectPopUpWidget, PreviewWidget, get_user_input
+from .widgets import DisplayWidget, ModeMethodWidget, MultiSelectPopUpWidget, PreviewWidget, get_user_input, VideoControlsWidget
 from .enums import VCModes, VCState
 from .utils import image_utils, file_utils, validate_int_str
 
@@ -52,7 +52,12 @@ class VisualComparisonApp(customtkinter.CTk):
         self.mm_widget.populate_mode_button(VCModes, self.on_change_mode)
         self.mm_widget.grid(row=1, column=0)
 
-        self.video_controller = customtkinter.CTkSlider(master=self, from_=0, to=100, width=720, command=self.on_set_video_position)
+        vc_callbacks = dict(
+            on_set_video_position=self.on_set_video_position,
+            on_pause=self.on_pause,
+            on_specify_frame_no=self.on_specify_frame_no,
+        )
+        self.video_controls = VideoControlsWidget(master=self, callbacks=vc_callbacks)
         self.display_handler = DisplayWidget(self)
         self.display_handler.grid(row=3, column=0)
 
@@ -61,7 +66,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.bind("d", self.on_next)
         self.bind("<Left>", self.on_prev)
         self.bind("<Right>", self.on_next)
-        self.bind("<space>", self.on_space)
+        self.bind("<space>", self.on_pause)
         self.bind_methods_to_keys()
 
         self.zoom_manager = ZoomManager(self.display_handler)
@@ -91,11 +96,42 @@ class VisualComparisonApp(customtkinter.CTk):
 
         MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods, app_callback=set_new_methods)
 
-    def on_space(self, event):
+    def on_pause(self, event=None):
         self.app_status.VIDEO_PAUSED = not self.app_status.VIDEO_PAUSED
+        self.video_controls.pause(self.app_status.VIDEO_PAUSED)
 
-    def on_set_video_position(self, value):
+    def on_specify_frame_no(self):
+        self.app_status.VIDEO_PAUSED = True
+        self.video_controls.pause()
+
+        _, total_num_frames, _ = self.content_handler.get_video_position()
+
+        user_input = get_user_input(
+            text=f"Enter frame number in range [0, {total_num_frames}]",
+            title="Specify frame number"
+        )
+        ret, desired_frame_no = validate_int_str(user_input)
+
+        # Check valid str
+        if not ret:
+            return
+        # Check valid index
+        if not (0 <= desired_frame_no <= total_num_frames):
+            return
+
+        self.on_set_video_position(desired_frame_no)
+
+    def on_set_video_position(self, value, relative=False, slider=False):
+        curr, total, _ = self.content_handler.get_video_position()
+
+        if slider:
+            value = total * value / 100.
+        if relative:
+            value = curr + value - 1
+
+        value = int(value)
         self.content_handler.set_video_position(value)
+        self.video_controls.update_widget(*self.content_handler.get_video_position())
         # self.app_status.VIDEO_PAUSED = True
         ret, images = self.content_handler.read_frames()
         if ret:
@@ -157,25 +193,26 @@ class VisualComparisonApp(customtkinter.CTk):
             self.display_handler.mouse_position = (0, 0)
             self.app_status.STATE = VCState.UPDATED
             self.app_status.VIDEO_PAUSED = False
+            self.video_controls.pause(False)
             self.zoom_manager.reset()
 
         if not self.app_status.VIDEO_PAUSED:
             # Show or hide video controller
             if self.content_handler.has_video():
-                if len(self.video_controller.grid_info()) == 0:
-                    self.video_controller.grid(row=2, column=0)
+                if len(self.video_controls.grid_info()) == 0:
+                    self.video_controls.grid(row=2, column=0, pady=2)
             else:
-                self.video_controller.grid_forget()
+                self.video_controls.grid_forget()
 
             # Set video controller
-            slider_position = self.content_handler.get_video_position()
-            self.video_controller.set(slider_position)
+            self.video_controls.update_widget(*self.content_handler.get_video_position())
 
             # Read images/videos
             ret, images = self.content_handler.read_frames()
 
             if not ret:
                 self.app_status.VIDEO_PAUSED = True
+                self.video_controls.pause(True)
                 images = self.images
             else:
                 self.images = images

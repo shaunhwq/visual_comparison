@@ -68,7 +68,7 @@ class ContentManager:
     def has_video(self):
         return len(self.video_indices) != 0
 
-    def set_video_position(self, value):
+    def set_video_position(self, frame_no):
         """
         # https://github.com/opencv/opencv/issues/9053
         cap.grab() mentioned to be the solution for now.
@@ -89,10 +89,9 @@ class ContentManager:
 
         first_cap = self.content_loaders[self.video_indices[0]]
         current_position = int(first_cap.get(cv2.CAP_PROP_POS_FRAMES))
-        desired_position = int(value / 100 * first_cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-        is_in_future = current_position < desired_position
-        number_frames = desired_position - current_position if is_in_future else desired_position
+        is_in_future = current_position < frame_no
+        number_frames = frame_no - current_position if is_in_future else frame_no
 
         # TODO: Might not be best solution, need to check if we can use threads to speed up this IO task
         for video_idx in self.video_indices:
@@ -103,9 +102,10 @@ class ContentManager:
             return 0
 
         cap = self.content_loaders[self.video_indices[0]]
-        video_position = cap.get(cv2.CAP_PROP_POS_FRAMES)
-        video_length = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-        return video_position / video_length * 100
+        video_position = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
+        video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        video_fps = cap.get(cv2.CAP_PROP_FPS)
+        return video_position, video_length, video_fps
 
     def read_frames(self):
         outputs = [cap.read() for cap in self.content_loaders]
