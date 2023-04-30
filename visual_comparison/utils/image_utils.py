@@ -27,7 +27,7 @@ def put_text(
     position: TextPosition = TextPosition.TOP_LEFT,
     buffer=5,
     font=cv2.FONT_HERSHEY_DUPLEX,
-    scale=0.5,
+    scale=1,
     thickness=1,
     bg_color: Tuple[int, int, int] = (0, 0, 0),
     fg_color: Tuple[int, int, int] = (255, 255, 255),
@@ -48,7 +48,23 @@ def put_text(
     :return: Output image containing the text.
     """
 
-    (text_width, text_height), _ = cv2.getTextSize(text, font, scale, thickness)
+    # Calculates actual scale required to set text size the same for imgs of different sizes
+    font_scale = {
+        cv2.FONT_HERSHEY_SIMPLEX: 1.0969,
+        cv2.FONT_HERSHEY_PLAIN: 2.1608,
+        cv2.FONT_HERSHEY_DUPLEX: 1.0914,
+        cv2.FONT_HERSHEY_COMPLEX: 1,
+        cv2.FONT_HERSHEY_TRIPLEX: 1.0094,
+        cv2.FONT_HERSHEY_COMPLEX_SMALL: 1.2952,
+        cv2.FONT_HERSHEY_SCRIPT_SIMPLEX: 1.1622,
+        cv2.FONT_HERSHEY_SCRIPT_COMPLEX: 1.1169,
+    }.get(font)
+    # 0.4 = Scale needed for fitting 40 hershey complex characters in 360 pixel width img
+    num_chars_scalar = 0.40 / (max(len(text), 40) / 40.0)
+    width_scale = (img.shape[1] / 360.0)
+    actual_scale = scale * num_chars_scalar * width_scale * font_scale
+
+    (text_width, text_height), _ = cv2.getTextSize(text, font, actual_scale, thickness)
     img_height, img_width, _ = img.shape
 
     if position == TextPosition.TOP_LEFT:
@@ -69,8 +85,8 @@ def put_text(
         img[start_y: end_y, start_x: end_x, :] = background
 
     # Foreground text overlaid onto background for highlight effect
-    cv2.putText(img, text, text_position, font, scale, bg_color, thickness + 1)
-    cv2.putText(img, text, text_position, font, scale, fg_color, thickness)
+    cv2.putText(img, text, text_position, font, actual_scale, bg_color, thickness + 1)
+    cv2.putText(img, text, text_position, font, actual_scale, fg_color, thickness)
 
 
 def merge_crop(img1: np.array, img2: np.array, position: Tuple[int, int], direction: str) -> np.array:
