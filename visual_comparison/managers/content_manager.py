@@ -5,22 +5,10 @@ from typing import List
 import cv2
 
 from ..utils import file_utils
+from ..utils import file_reader
 
 
 __all__ = ["ContentManager"]
-
-
-class ImageCapture:
-    """
-    TODO: Handle HDR Reading too later?
-    """
-    def __init__(self, image_path):
-        self.image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-
-    def read(self):
-        if self.image is None:
-            return False, None
-        return True, self.image.copy()
 
 
 class ContentManager:
@@ -72,14 +60,10 @@ class ContentManager:
         self.content_loaders = []
         self.video_indices = []
         for file_idx, file in enumerate(paths):
-            extension = os.path.splitext(file)[-1].lower()
-            if extension in {".jpg", ".png", ".hdr"}:
-                self.content_loaders.append(ImageCapture(file))
-            elif extension in {".mp4"}:
-                self.content_loaders.append(cv2.VideoCapture(file))
+            cap = file_reader.read_media_file(file)
+            self.content_loaders.append(cap)
+            if isinstance(cap, cv2.VideoCapture):
                 self.video_indices.append(file_idx)
-            else:
-                raise NotImplementedError(f"Ext not supported: {extension} for file {file}")
 
     def has_video(self):
         return len(self.video_indices) != 0
@@ -96,7 +80,7 @@ class ContentManager:
 
         def seek_video(vid_idx, no_frames, in_future):
             if not in_future:
-                self.content_loaders[vid_idx] = cv2.VideoCapture(content_paths[vid_idx])
+                self.content_loaders[vid_idx] = file_reader.read_media_file(content_paths[vid_idx])
             for i in range(no_frames):
                 self.content_loaders[vid_idx].grab()
 

@@ -58,7 +58,7 @@ class PreviewWidget(customtkinter.CTkFrame):
 
         # Load images for preview window. Multi thread for faster reading.
         with ThreadPoolExecutor() as executor:
-            images = list(tqdm(iterable=executor.map(file_utils.load_img_thumbnail, file_paths),
+            images = list(tqdm(iterable=executor.map(file_utils.load_thumbnail, file_paths),
                                desc="Loading thumbnails...",
                                total=len(file_paths)))
 

@@ -2,12 +2,13 @@ import os
 import cv2
 import glob
 from typing import List
+from .file_reader import read_media_file
 
 
 __all__ = [
     "get_folders",
     "get_filenames",
-    "load_img_thumbnail",
+    "load_thumbnail",
     "complete_paths",
 ]
 
@@ -48,21 +49,16 @@ def get_filenames(root: str, folders: List[str]) -> List[str]:
     return common_files
 
 
-def load_img_thumbnail(img_path, max_height=75):
-    ext = os.path.splitext(os.path.basename(img_path))[-1].lower()
-    if ext in {".png", ".jpg"}:
-        img = cv2.imread(img_path, -1)
-    elif ext in {".mp4", ".avi"}:
-        cap = cv2.VideoCapture(img_path)
-        ret, img = cap.read()
-        cap.release()
-    else:
-        raise NotImplementedError(f"Unsupported ext for loading image thumbnail: {ext}")
+def load_thumbnail(file_path, max_height=75):
+    cap = read_media_file(file_path)
+    ret, img = cap.read()
 
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     h, w, _ = img.shape
     scale = max_height / h
     img = cv2.resize(img, (int(w * scale), int(h * scale)))
+
+    cap.release()
     return img
 
 
