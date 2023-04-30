@@ -3,9 +3,6 @@ import os
 import cv2
 import numpy as np
 
-from .utils import get_video_information
-
-
 __all__ = ["read_media_file", "ImageCapture"]
 
 
