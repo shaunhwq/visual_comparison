@@ -198,8 +198,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def on_save_image(self, event=None):
         if hasattr(self, "output_image"):
-            desired_path = filedialog.asksaveasfile(mode='w', defaultextension=".png").name
-            print(desired_path)
+            desired_path = filedialog.asksaveasfile(mode='w', initialfile="new_file", defaultextension=".png").name
             cv2.imwrite(desired_path, self.output_image)
 
     def on_copy_image(self, event=None):
