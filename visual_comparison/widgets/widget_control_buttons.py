@@ -2,29 +2,37 @@ import customtkinter
 from ..enums import VCModes
 
 
-__all__ = ["ModeMethodWidget"]
+__all__ = ["ControlButtonsWidget"]
 
 
-class ModeMethodWidget(customtkinter.CTkFrame):
-    def __init__(self, mm_callbacks, *args, **kwargs):
+class ControlButtonsWidget(customtkinter.CTkFrame):
+    def __init__(self, callbacks, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         frame_00 = customtkinter.CTkFrame(master=self)
-        button_prev = customtkinter.CTkButton(master=frame_00, text="<", command=mm_callbacks["on_prev"], width=30, height=25)
+        button_prev = customtkinter.CTkButton(master=frame_00, text="<", command=callbacks["on_prev"], width=30, height=25)
         button_prev.grid(row=1, column=0, padx=5)
-        button_method = customtkinter.CTkButton(master=frame_00, text="Method:", command=mm_callbacks["on_select_methods"], width=50, height=25)
+        button_method = customtkinter.CTkButton(master=frame_00, text="Method:", command=callbacks["on_select_methods"], width=50, height=25)
         button_method.grid(row=1, column=1, padx=5)
-        button_select_specific = customtkinter.CTkButton(master=frame_00, text="Idx:", command=mm_callbacks["on_specify_index"], width=50, height=25)
+        button_select_specific = customtkinter.CTkButton(master=frame_00, text="Idx:", command=callbacks["on_specify_index"], width=50, height=25)
         button_select_specific.grid(row=1, column=2, padx=5)
-        button_next = customtkinter.CTkButton(master=frame_00, text=">", command=mm_callbacks["on_next"], width=30, height=25)
+        button_next = customtkinter.CTkButton(master=frame_00, text=">", command=callbacks["on_next"], width=30, height=25)
         button_next.grid(row=1, column=3, padx=5)
-        frame_00.grid(row=0, column=0)
+        frame_00.grid(row=0, column=0, padx=20)
 
         # For controlling modes
         frame_01 = customtkinter.CTkFrame(master=self)
         self.modes_button = customtkinter.CTkSegmentedButton(master=frame_01)
         self.modes_button.pack()
-        frame_01.grid(row=0, column=1)
+        frame_01.grid(row=0, column=1, padx=20)
+
+        # For saving and copying files
+        frame_02 = customtkinter.CTkFrame(master=self)
+        button_save = customtkinter.CTkButton(master=frame_02, width=75, height=25, command=callbacks["on_save_image"], text="Save")
+        button_save.grid(row=0, column=0, padx=5)
+        button_copy = customtkinter.CTkButton(master=frame_02, width=75, height=25, command=callbacks["on_copy_image"], text="Copy")
+        button_copy.grid(row=0, column=1, padx=5)
+        frame_02.grid(row=0, column=2, padx=20)
 
         # For changing to 'Specific' mode
         frame_10 = customtkinter.CTkFrame(master=self)

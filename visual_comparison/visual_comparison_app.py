@@ -9,7 +9,7 @@ import numpy as np
 import customtkinter
 
 from .managers import ZoomManager, ContentManager
-from .widgets import DisplayWidget, ModeMethodWidget, MultiSelectPopUpWidget, PreviewWidget, get_user_input, VideoControlsWidget
+from .widgets import DisplayWidget, ControlButtonsWidget, MultiSelectPopUpWidget, PreviewWidget, get_user_input, VideoControlsWidget
 from .enums import VCModes, VCState
 from .utils import image_utils, file_utils, validate_int_str
 
@@ -44,16 +44,18 @@ class VisualComparisonApp(customtkinter.CTk):
         self.preview_widget.populate_preview_window(src_file_paths, self.on_specify_index)
         self.preview_widget.grid(row=0, column=0)
 
-        mm_callbacks = dict(
+        cb_callbacks = dict(
             on_prev=self.on_prev,
             on_next=self.on_next,
             on_specify_index=self.on_specify_index,
             on_select_methods=self.on_select_methods,
+            on_save_image=self.on_save_image,
+            on_copy_image=self.on_copy_image,
         )
-        self.mm_widget = ModeMethodWidget(mm_callbacks=mm_callbacks, master=self)
-        self.mm_widget.populate_methods_button(self.content_handler.current_methods, self.on_change_mode)
-        self.mm_widget.populate_mode_button(VCModes, self.on_change_mode)
-        self.mm_widget.grid(row=1, column=0)
+        self.cb_widget = ControlButtonGroupWidget(master=self, callbacks=cb_callbacks)
+        self.cb_widget.populate_methods_button(self.content_handler.current_methods, self.on_change_mode)
+        self.cb_widget.populate_mode_button(VCModes, self.on_change_mode)
+        self.cb_widget.grid(row=1, column=0)
 
         vc_callbacks = dict(
             on_set_video_position=self.on_set_video_position,
@@ -73,7 +75,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
         # Bind Ctrl C or Cmd C to copy image.
         bind_copy_cmd = "<M1-c>" if platform.system() == "Darwin" else "<Control-c>"
-        self.bind(bind_copy_cmd, self.on_copy_image_to_clipboard)
+        self.bind(bind_copy_cmd, self.on_copy_image)
         bind_save_cmd = "<M1-s>" if platform.system() == "Darwin" else "<Control-s>"
         self.bind(bind_save_cmd, self.on_save_image)
 
@@ -98,10 +100,10 @@ class VisualComparisonApp(customtkinter.CTk):
                 print(f"Please select more than 2 methods")
                 return
             self.content_handler.current_methods = new_methods
-            self.mm_widget.set_mode(VCModes.Compare)
-            self.mm_widget.show_method_button(show=False)
+            self.cb_widget.set_mode(VCModes.Compare)
+            self.cb_widget.show_method_button(show=False)
             self.app_status.reset()
-            self.mm_widget.populate_methods_button(new_methods, self.on_change_mode)
+            self.cb_widget.populate_methods_button(new_methods, self.on_change_mode)
             self.bind_methods_to_keys()
 
         MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods, app_callback=set_new_methods)
@@ -176,19 +178,19 @@ class VisualComparisonApp(customtkinter.CTk):
 
         # Double click on same button for example.
         if mode == VCModes.Compare:
-            self.mm_widget.show_method_button(show=False)
+            self.cb_widget.show_method_button(show=False)
         elif mode == VCModes.Concat:
-            self.mm_widget.show_method_button(show=False)
+            self.cb_widget.show_method_button(show=False)
         else:
             if method == self.app_status.METHOD and self.app_status.MODE == VCModes.Specific:
-                self.mm_widget.show_method_button(show=False)
-                self.mm_widget.set_method(VCModes.Compare)
+                self.cb_widget.show_method_button(show=False)
+                self.cb_widget.set_method(VCModes.Compare)
                 self.app_status.reset()
                 return
             else:
-                self.mm_widget.set_mode(VCModes.Specific)
-                self.mm_widget.set_method(method)
-                self.mm_widget.show_method_button(show=True)
+                self.cb_widget.set_mode(VCModes.Specific)
+                self.cb_widget.set_method(method)
+                self.cb_widget.show_method_button(show=True)
 
         self.app_status.MODE = mode
         self.app_status.METHOD = method
@@ -200,7 +202,7 @@ class VisualComparisonApp(customtkinter.CTk):
             print(desired_path)
             cv2.imwrite(desired_path, self.output_image)
 
-    def on_copy_image_to_clipboard(self, event=None):
+    def on_copy_image(self, event=None):
         """Copy current contents of text_entry to clipboard."""
         if hasattr(self, "output_image"):
             image_utils.image_to_clipboard(self.output_image.copy())
