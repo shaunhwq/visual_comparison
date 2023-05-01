@@ -169,23 +169,55 @@ def image_to_clipboard(image):
     operating_system = platform.system()
 
     if operating_system == "Darwin":
-        # Using applescript to read an image, send it to clipboard and then delete it.
-        file_name = "vc_clipboard_img.png"
-        cv2.imwrite(file_name, image)
-        subprocess.run(["osascript", "-e", f'set the clipboard to (read (POSIX file "{file_name}") as «class PNGf»)'])
-        os.remove(file_name)
-
-    elif operating_system == "Windows" or operating_system == "Linux":
-        try:
-            import klembord
-        except ImportError as err:
-            print(f"Klembord is required for clipboard operations. Please install it first. Err: {err}")
-
-        rgb_copy = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        pil_img = Image.fromarray(rgb_copy)
-        # Save the image as binary data
-        with BytesIO() as buffer:
-            pil_img.save(buffer, format="PNG")
-            klembord.set({"image/png": buffer.getvalue()})
+        _image_to_clipboard_macos(image)
+    elif operating_system == "Windows":
+        _image_to_clipboard_windows(image)
+    elif operating_system == "Linux":
+        _image_to_clipboard_linux(image)
     else:
         raise NotImplementedError(f"Clipboard feature not supported for os '{operating_system}'")
+
+
+def _image_to_clipboard_windows(image: np.array):
+    # https://stackoverflow.com/questions/34322132/copy-image-to-clipboard
+    try:
+        import win32clipboard
+    except ImportError as err:
+        print(f"win32clipboard is required for clipboard operations. Run 'pip3 install pywin32'. Err: {err}")
+        return
+
+    rgb_copy = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    pil_img = Image.fromarray(rgb_copy)
+    # Save the image as binary data
+    with BytesIO() as buffer:
+        pil_img.save(buffer, format="BMP")
+        data = buffer.getvalue()[14:]
+
+    win32clipboard.OpenClipboard()
+    win32clipboard.EmptyClipboard()
+    win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
+    win32clipboard.CloseClipboard()
+
+
+def _image_to_clipboard_macos(image: np.array):
+    # Using applescript to read an image, send it to clipboard and then delete it.
+    file_name = "vc_clipboard_img.png"
+    cv2.imwrite(file_name, image)
+    subprocess.run(["osascript", "-e", f'set the clipboard to (read (POSIX file "{file_name}") as «class PNGf»)'])
+    os.remove(file_name)
+
+
+def _image_to_clipboard_linux(image: np.array):
+    # https://stackoverflow.com/questions/56618983/how-do-i-copy-a-pil-picture-to-clipboard
+    try:
+        import klembord
+    except ImportError as err:
+        print(f"Klembord is required for clipboard operations. Run 'pip3 install klembord. Err: {err}")
+        return
+
+    rgb_copy = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    pil_img = Image.fromarray(rgb_copy)
+    # Save the image as binary data
+    with BytesIO() as buffer:
+        pil_img.save(buffer, format="BMP")
+        klembord.set({"image/png": buffer.getvalue()})
