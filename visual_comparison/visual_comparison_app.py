@@ -226,7 +226,8 @@ class VisualComparisonApp(customtkinter.CTk):
                 self.video_controls.grid_forget()
 
             # Set video controller
-            self.video_controls.update_widget(*self.content_handler.get_video_position())
+            if self.content_handler.has_video():
+                self.video_controls.update_widget(*self.content_handler.get_video_position())
 
             # Read images/videos
             ret, images = self.content_handler.read_frames()
