@@ -94,6 +94,8 @@ optional arguments:
 | Click in preview window | Changes to selected file |
 | Click on "Method:" | Popup appears to select methods to show |
 | Click on "Idx:" | Popup appears to change to index, must be int and < number files |
+| Ctrl/Cmd + c | Copy current view in display to clipboard, can be pasted elsewhere |
+| Ctrl/Cmd + s | File window popup appears for saving current view to a file |
 
 #### Zooming
 

@@ -1,8 +1,14 @@
-from typing import Optional
-import numpy as np
-from typing import Tuple, List
+import os
 import enum
+import platform
+import subprocess
+from io import BytesIO
+from typing import Optional
+
 import cv2
+import numpy as np
+from PIL import Image
+from typing import Tuple, List
 
 
 __all__ = [
@@ -157,3 +163,29 @@ def resize_scale(image, scale, interpolation=cv2.INTER_LINEAR):
     new_shape = (int(round(w * scale)), int(round(h * scale)))
     image = cv2.resize(image, new_shape, interpolation=interpolation)
     return image
+
+
+def image_to_clipboard(image):
+    operating_system = platform.system()
+
+    if operating_system == "Darwin":
+        # Using applescript to read an image, send it to clipboard and then delete it.
+        file_name = "vc_clipboard_img.png"
+        cv2.imwrite(file_name, image)
+        subprocess.run(["osascript", "-e", f'set the clipboard to (read (POSIX file "{file_name}") as «class PNGf»)'])
+        os.remove(file_name)
+
+    elif operating_system == "Windows" or operating_system == "Linux":
+        try:
+            import klembord
+        except ImportError as err:
+            print(f"Klembord is required for clipboard operations. Please install it first. Err: {err}")
+
+        rgb_copy = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        pil_img = Image.fromarray(rgb_copy)
+        # Save the image as binary data
+        with BytesIO() as buffer:
+            pil_img.save(buffer, format="PNG")
+            klembord.set({"image/png": buffer.getvalue()})
+    else:
+        raise NotImplementedError(f"Clipboard feature not supported for os '{operating_system}'")

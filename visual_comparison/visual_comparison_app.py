@@ -1,7 +1,10 @@
 import tkinter
+from tkinter import filedialog
 from typing import Optional
 import dataclasses
+import platform
 
+import cv2
 import numpy as np
 import customtkinter
 
@@ -67,6 +70,13 @@ class VisualComparisonApp(customtkinter.CTk):
         self.bind("<Left>", self.on_prev)
         self.bind("<Right>", self.on_next)
         self.bind("<space>", self.on_pause)
+
+        # Bind Ctrl C or Cmd C to copy image.
+        bind_copy_cmd = "<M1-c>" if platform.system() == "Darwin" else "<Control-c>"
+        self.bind(bind_copy_cmd, self.on_copy_image_to_clipboard)
+        bind_save_cmd = "<M1-s>" if platform.system() == "Darwin" else "<Control-s>"
+        self.bind(bind_save_cmd, self.on_save_image)
+
         self.bind_methods_to_keys()
 
         self.zoom_manager = ZoomManager(self.display_handler)
@@ -183,6 +193,17 @@ class VisualComparisonApp(customtkinter.CTk):
         self.app_status.MODE = mode
         self.app_status.METHOD = method
         self.app_status.STATE = VCState.UPDATE_MODE
+
+    def on_save_image(self, event=None):
+        if hasattr(self, "output_image"):
+            desired_path = filedialog.asksaveasfile(mode='w', defaultextension=".png").name
+            print(desired_path)
+            cv2.imwrite(desired_path, self.output_image)
+
+    def on_copy_image_to_clipboard(self, event=None):
+        """Copy current contents of text_entry to clipboard."""
+        if hasattr(self, "output_image"):
+            image_utils.image_to_clipboard(self.output_image.copy())
 
     def display(self):
         # Read the files when changing method or files.
