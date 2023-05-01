@@ -197,14 +197,14 @@ class VisualComparisonApp(customtkinter.CTk):
         self.app_status.STATE = VCState.UPDATE_MODE
 
     def on_save_image(self, event=None):
-        if hasattr(self, "output_image"):
+        if hasattr(self, "display_image"):
             desired_path = filedialog.asksaveasfile(mode='w', initialfile="new_file", defaultextension=".png").name
-            cv2.imwrite(desired_path, self.output_image)
+            cv2.imwrite(desired_path, self.display_image)
 
     def on_copy_image(self, event=None):
         """Copy current contents of text_entry to clipboard."""
-        if hasattr(self, "output_image"):
-            image_utils.image_to_clipboard(self.output_image.copy())
+        if hasattr(self, "display_image"):
+            image_utils.image_to_clipboard(self.display_image)
 
     def display(self):
         # Read the files when changing method or files.
@@ -277,6 +277,9 @@ class VisualComparisonApp(customtkinter.CTk):
 
         # Cropped image is displayed below original image
         display_image = np.vstack([self.output_image, self.cropped_image]) if self.cropped_image is not None else self.output_image
+
+        # For copy/save functionality
+        self.display_image = display_image
 
         self.display_handler.update_image(display_image)
 
