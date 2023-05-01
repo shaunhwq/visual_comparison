@@ -196,13 +196,22 @@ class VisualComparisonApp(customtkinter.CTk):
         self.app_status.METHOD = method
         self.app_status.STATE = VCState.UPDATE_MODE
 
-    def on_save_image(self, event=None):
+    def on_save_image(self, event: Optional[tkinter.Event] = None) -> None:
+        """
+        Opens a file dialog and saves the image to specified folder
+        :param event: Tkinter event, passed by self.bind.
+        :return: None
+        """
         if hasattr(self, "display_image"):
             desired_path = filedialog.asksaveasfile(mode='w', initialfile="new_file", defaultextension=".png").name
             cv2.imwrite(desired_path, self.display_image)
 
-    def on_copy_image(self, event=None):
-        """Copy current contents of text_entry to clipboard."""
+    def on_copy_image(self, event: Optional[tkinter.Event] = None) -> None:
+        """
+        Saves currently displayed image to clipboard, can be pasted elsewhere.
+        :param event: Tkinter event, passed by self.bind.
+        :return: None
+        """
         if hasattr(self, "display_image"):
             image_utils.image_to_clipboard(self.display_image)
 
