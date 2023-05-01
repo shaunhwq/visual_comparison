@@ -210,7 +210,6 @@ class VisualComparisonApp(customtkinter.CTk):
     def display(self):
         # Read the files when changing method or files.
         if self.app_status.STATE == VCState.UPDATE_FILE or self.app_status.STATE == VCState.UPDATE_METHOD:
-            print("Loading files")
             self.title(self.content_handler.get_title())
             self.content_handler.load_files(self.content_handler.get_paths())
             self.display_handler.mouse_position = (0, 0)
