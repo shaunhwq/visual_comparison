@@ -52,7 +52,7 @@ class VisualComparisonApp(customtkinter.CTk):
             on_save_image=self.on_save_image,
             on_copy_image=self.on_copy_image,
         )
-        self.cb_widget = ControlButtonGroupWidget(master=self, callbacks=cb_callbacks)
+        self.cb_widget = ControlButtonsWidget(master=self, callbacks=cb_callbacks)
         self.cb_widget.populate_methods_button(self.content_handler.current_methods, self.on_change_mode)
         self.cb_widget.populate_mode_button(VCModes, self.on_change_mode)
         self.cb_widget.grid(row=1, column=0)
