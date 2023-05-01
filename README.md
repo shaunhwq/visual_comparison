@@ -45,6 +45,17 @@ Either create a virtualenv or conda env. Tested on python 3.8. After activating,
 pip3 install customtkinter opencv-python pillow tqdm
 ```
 
+Next, install the following packages for copy image to clipboard functionality
+```
+# MacOS - None
+
+# Windows
+pip3 install pywin32
+
+# Linux
+pip3 install klembord
+```
+
 ## <u> Usage </u>
 
 ### File Structure and Requirements
