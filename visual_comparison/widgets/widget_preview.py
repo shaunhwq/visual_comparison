@@ -35,7 +35,9 @@ class PreviewWidget(customtkinter.CTkFrame):
         self.canvas_viewport.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
 
         # Bind mousewheel to allow horizontal scrolling
-        self.canvas_viewport.bind_all("<MouseWheel>", self._on_mousewheel)
+        # https://stackoverflow.com/questions/17355902/tkinter-binding-mousewheel-to-scrollbar
+        self.scrollable_frame.bind('<Enter>', self._bound_to_mousewheel)
+        self.scrollable_frame.bind('<Leave>', self._unbound_to_mousewheel)
 
         self.selected_idx = 0
         self.view_radius = 100
@@ -44,6 +46,12 @@ class PreviewWidget(customtkinter.CTkFrame):
         self.buttons = []
 
         self.canvas_viewport.grid(row=0, sticky="nsew")
+
+    def _bound_to_mousewheel(self, event):
+        self.canvas_viewport.bind_all("<MouseWheel>", self._on_mousewheel)
+
+    def _unbound_to_mousewheel(self, event):
+        self.canvas_viewport.unbind_all("<MouseWheel>")
 
     def populate_preview_window(self, file_paths: List[str], callback) -> None:
         """
