@@ -43,8 +43,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.preview_widget = PreviewWidget(master=self)
         # File path completion for source folder
 
-        src_file_paths = file_utils.complete_paths(root, src_folder_name, self.content_handler.files)
-        self.preview_widget.populate_preview_window(src_file_paths, self.on_specify_index)
+        self.preview_widget.populate_preview_window(self.content_handler.thumbnails, self.on_specify_index)
         self.preview_widget.grid(row=0, column=0)
 
         cb_callbacks = dict(
@@ -131,9 +130,9 @@ class VisualComparisonApp(customtkinter.CTk):
         MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods, app_callback=set_new_methods)
 
     def on_filter_files(self):
-        def set_new_files(new_files):
+        def set_new_files(rows):
             # Reset app status
-            self.content_handler.current_files = [file[1] for file in new_files]
+            self.content_handler.current_files = [r[1] for r in rows]
             self.cb_widget.set_mode(VCModes.Compare)
             self.cb_widget.show_method_button(show=False)
             self.app_status.reset()
@@ -142,15 +141,15 @@ class VisualComparisonApp(customtkinter.CTk):
             self.preview_widget.destroy()
             self.preview_widget = PreviewWidget(master=self)
             self.preview_widget.grid(row=0, column=0)
-            src_file_paths = file_utils.complete_paths(self.root, self.src_folder_name, self.content_handler.current_files)
-            self.preview_widget.populate_preview_window(src_file_paths, self.on_specify_index)
+            selected_thumbnails = [self.content_handler.thumbnails[r[0]] for r in rows]
+            self.preview_widget.populate_preview_window(selected_thumbnails, self.on_specify_index)
             self.on_specify_index(0)
 
-        column_titles = ["S/N", "File Path"]
-        files = [[idx, file] for idx, file in enumerate(self.content_handler.files)]
-        _, longest_string = max(files, key=lambda row: len(row[1]))
-        text_width = int(400./55 * len(longest_string)) + 25  # Number of pixels for width
-        DataSelectionPopup(files, column_titles=column_titles, callback=set_new_files, text_width=text_width)
+        row = max(self.content_handler.data, key=lambda row: len(row[1]))
+        text_width = int(400./55 * len(row[1])) + 25  # Number of pixels for width
+        num_titles = max(len(d) for d in self.content_handler.data)
+        titles = self.content_handler.data_titles[: num_titles]
+        DataSelectionPopup(self.content_handler.data, column_titles=titles, callback=set_new_files, text_width=text_width)
 
     def on_pause(self, event=None):
         self.app_status.VIDEO_PAUSED = not self.app_status.VIDEO_PAUSED

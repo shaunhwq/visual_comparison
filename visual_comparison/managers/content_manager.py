@@ -1,8 +1,10 @@
 import os
 import glob
 from typing import List
+from concurrent.futures import ThreadPoolExecutor
 
 import cv2
+from tqdm import tqdm
 
 from ..utils import file_utils
 from ..utils import file_reader
@@ -14,6 +16,8 @@ __all__ = ["ContentManager"]
 class ContentManager:
     def __init__(self, root, src_folder_name):
         self.root = root
+        self.src_folder_name = src_folder_name
+
         self.methods = file_utils.get_folders(root, src_folder_name)
         self.files = file_utils.get_filenames(root, self.methods)
 
@@ -23,6 +27,44 @@ class ContentManager:
         self.current_index = 0
         self.current_methods = list(self.methods)
         self.current_files = list(self.files)
+
+        # Could use pandas but don't want to introduce dependency
+        self.data = []
+        self.thumbnails = []
+        self.data_titles = ["S/N", "File Path", "Height", "Width", "Frame Count", "FPS"]
+        # Collect and store file information. Time vs memory trade off. Reduce wait for many files.
+        self.get_data()
+
+    def get_data(self):
+        # Load images for preview window. Multi thread for faster reading.
+        file_paths = file_utils.complete_paths(self.root, self.src_folder_name, self.files)
+
+        with ThreadPoolExecutor() as executor:
+            return_values = tqdm(iterable=executor.map(self.load_file_info, file_paths),
+                                 desc="Loading file info...",
+                                 total=len(file_paths))
+
+        for idx, (thumbnail, data) in enumerate(return_values):
+            self.thumbnails.append(thumbnail)
+            self.data.append([idx] + data)
+
+    @staticmethod
+    def load_file_info(file_path, max_height=75):
+        cap = file_reader.read_media_file(file_path)
+        ret, img = cap.read()
+
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        h, w, _ = img.shape
+        scale = max_height / h
+        thumbnail = cv2.resize(img, (int(w * scale), int(h * scale)))
+
+        data = [os.path.splitext(os.path.basename(file_path))[0], h, w]
+        if isinstance(cap, cv2.VideoCapture):
+            data.append(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
+            data.append(round(cap.get(cv2.CAP_PROP_FPS), 2))
+
+        cap.release()
+        return thumbnail, data
 
     def get_paths(self) -> List[str]:
         """

@@ -124,13 +124,13 @@ class FilterRangePopup(customtkinter.CTkToplevel):
             if lower_val > upper_val:
                 self.error_label.configure(text="Lower > Upper")
                 return
-            selected_idxs = [idx for idx, value in enumerate(self.values) if lower_val <= value <= upper_val]
+            selected_idxs = [idx for idx, value in enumerate(self.values) if lower_val <= float(value) <= upper_val]
         elif tab == "Equals":
             ret, equals_val = validate_float_str(self.equals_text_box.get())
             if not ret:
                 self.error_label.configure(text="Error parsing values")
                 return
-            selected_idxs = [idx for idx, value in enumerate(self.values) if equals_val == value]
+            selected_idxs = [idx for idx, value in enumerate(self.values) if equals_val == float(value)]
         else:
             raise NotImplementedError("Invalid tab option")
 

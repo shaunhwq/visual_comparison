@@ -1,7 +1,6 @@
 from typing import List
-from concurrent.futures import ThreadPoolExecutor
 
-from tqdm import tqdm
+import numpy as np
 import tkinter
 import customtkinter
 from tkinter import ttk
@@ -53,22 +52,16 @@ class PreviewWidget(customtkinter.CTkFrame):
     def _unbound_to_mousewheel(self, event):
         self.canvas_viewport.unbind_all("<MouseWheel>")
 
-    def populate_preview_window(self, file_paths: List[str], callback) -> None:
+    def populate_preview_window(self, images: List[np.array], callback) -> None:
         """
         Load content
-        :param file_paths: List of path to files from which we extract thumbnails
+        :param images: List of images to place in button
         :param callback: Callback for button when clicked
         :return:
         """
         # Destroy any existing buttons, for changing directories
         for button in self.buttons:
             button.destroy()
-
-        # Load images for preview window. Multi thread for faster reading.
-        with ThreadPoolExecutor() as executor:
-            images = tqdm(iterable=executor.map(file_utils.load_thumbnail, file_paths),
-                          desc="Loading thumbnails...",
-                          total=len(file_paths))
 
         # Create buttons
         for i, image in enumerate(images):
