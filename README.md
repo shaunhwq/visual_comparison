@@ -99,6 +99,7 @@ optional arguments:
 | --- | --- |
 | Press "1" to "9" | Switches to specific mode, or toggles back to comparison mode |
 | Press "a" or "d" or arrow keys "left" or "right" | Show previous or next file |
+| Press "z" or "c" or arrow keys "up" or "down" | Show previous or next method |
 | Press "space" | Pauses the video (if there is one) |
 | Click on video slider | Skips to selected part of video |
 | Scroll mouse | Moves the preview window |

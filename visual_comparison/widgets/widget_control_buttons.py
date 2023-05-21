@@ -10,23 +10,30 @@ class ControlButtonsWidget(customtkinter.CTkFrame):
         super().__init__(*args, **kwargs)
 
         frame_00 = customtkinter.CTkFrame(master=self)
-        button_prev = customtkinter.CTkButton(master=frame_00, text="<", command=callbacks["on_prev"], width=30, height=25)
-        button_prev.grid(row=1, column=0, padx=5)
-        button_method = customtkinter.CTkButton(master=frame_00, text="Method:", command=callbacks["on_select_methods"], width=50, height=25)
-        button_method.grid(row=1, column=1, padx=5)
+        button_prev = customtkinter.CTkButton(master=frame_00, text="<", command=callbacks["on_prev_file"], width=30, height=25)
+        button_prev.grid(row=0, column=0, padx=(5, 2))
+        button_select_specific = customtkinter.CTkButton(master=frame_00, text="File Idx:", command=callbacks["on_specify_index"], width=50, height=25)
+        button_select_specific.grid(row=0, column=1, padx=(0, 2))
+        button_next = customtkinter.CTkButton(master=frame_00, text=">", command=callbacks["on_next_file"], width=30, height=25)
+        button_next.grid(row=0, column=2, padx=(0, 5))
+
         button_search = customtkinter.CTkButton(master=frame_00, text="Filter:", command=callbacks["on_filter_files"], width=50, height=25)
-        button_search.grid(row=1, column=2, padx=5)
-        button_select_specific = customtkinter.CTkButton(master=frame_00, text="Idx:", command=callbacks["on_specify_index"], width=50, height=25)
-        button_select_specific.grid(row=1, column=3, padx=5)
-        button_next = customtkinter.CTkButton(master=frame_00, text=">", command=callbacks["on_next"], width=30, height=25)
-        button_next.grid(row=1, column=4, padx=5)
-        frame_00.grid(row=0, column=0, padx=20)
+        button_search.grid(row=0, column=3, padx=5)
+
+        button_prev_method = customtkinter.CTkButton(master=frame_00, text="<", command=callbacks["on_prev_method"], width=30, height=25)
+        button_prev_method.grid(row=0, column=4, padx=(5, 2))
+        button_method = customtkinter.CTkButton(master=frame_00, text="Method:", command=callbacks["on_select_methods"], width=50, height=25)
+        button_method.grid(row=0, column=5, padx=(0, 2))
+        button_next_method = customtkinter.CTkButton(master=frame_00, text=">", command=callbacks["on_next_method"], width=30, height=25)
+        button_next_method.grid(row=0, column=6, padx=(0, 5))
+
+        frame_00.grid(row=0, column=0, padx=10)
 
         # For controlling modes
         frame_01 = customtkinter.CTkFrame(master=self)
         self.modes_button = customtkinter.CTkSegmentedButton(master=frame_01)
         self.modes_button.pack()
-        frame_01.grid(row=0, column=1, padx=20)
+        frame_01.grid(row=0, column=1, padx=10)
 
         # For saving and copying files
         frame_02 = customtkinter.CTkFrame(master=self)
@@ -34,7 +41,7 @@ class ControlButtonsWidget(customtkinter.CTkFrame):
         button_save.grid(row=0, column=0, padx=5)
         button_copy = customtkinter.CTkButton(master=frame_02, width=75, height=25, command=callbacks["on_copy_image"], text="Copy")
         button_copy.grid(row=0, column=1, padx=5)
-        frame_02.grid(row=0, column=2, padx=20)
+        frame_02.grid(row=0, column=2, padx=10)
 
         # For changing to 'Specific' mode
         frame_10 = customtkinter.CTkFrame(master=self)

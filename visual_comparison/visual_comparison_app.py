@@ -48,11 +48,13 @@ class VisualComparisonApp(customtkinter.CTk):
         self.preview_widget.grid(row=0, column=0)
 
         cb_callbacks = dict(
-            on_prev=self.on_prev,
-            on_next=self.on_next,
+            on_prev_file=self.on_prev_file,
             on_specify_index=self.on_specify_index,
-            on_select_methods=self.on_select_methods,
+            on_next_file=self.on_next_file,
             on_filter_files=self.on_filter_files,
+            on_prev_method=self.on_prev_method,
+            on_select_methods=self.on_select_methods,
+            on_next_method=self.on_next_method,
             on_save_image=self.on_save_image,
             on_copy_image=self.on_copy_image,
         )
@@ -71,11 +73,15 @@ class VisualComparisonApp(customtkinter.CTk):
         self.display_handler.grid(row=3, column=0)
 
         self.images = None
-        self.bind("a", self.on_prev)
-        self.bind("d", self.on_next)
-        self.bind("<Left>", self.on_prev)
-        self.bind("<Right>", self.on_next)
+        self.bind("a", self.on_prev_file)
+        self.bind("d", self.on_next_file)
+        self.bind("<Left>", self.on_prev_file)
+        self.bind("<Right>", self.on_next_file)
         self.bind("<space>", self.on_pause)
+        self.bind("z", self.on_prev_method)
+        self.bind("c", self.on_next_method)
+        self.bind("<Up>", self.on_prev_method)
+        self.bind("<Down>", self.on_next_method)
 
         # Bind Ctrl C or Cmd C to copy image.
         bind_copy_cmd = "<M1-c>" if platform.system() == "Darwin" else "<Control-c>"
@@ -86,6 +92,18 @@ class VisualComparisonApp(customtkinter.CTk):
         self.bind_methods_to_keys()
 
         self.zoom_manager = ZoomManager(self.display_handler)
+
+    def on_prev_method(self, event=None):
+        methods = self.content_handler.current_methods
+        current_idx = methods.index(self.app_status.METHOD) if self.app_status.METHOD is not None else 0
+        desired_index = (current_idx - 1) % len(methods)
+        self.on_change_mode(VCModes.Specific, methods[desired_index])
+
+    def on_next_method(self, event=None):
+        methods = self.content_handler.current_methods
+        current_idx = methods.index(self.app_status.METHOD) if self.app_status.METHOD is not None else 0
+        desired_index = (current_idx + 1) % len(methods)
+        self.on_change_mode(VCModes.Specific, methods[desired_index])
 
     def bind_methods_to_keys(self):
         current_methods = self.content_handler.current_methods
@@ -188,12 +206,12 @@ class VisualComparisonApp(customtkinter.CTk):
         else:
             pass  # TODO: Add custom error msg
 
-    def on_prev(self, event: Optional[tkinter.Event] = None):
+    def on_prev_file(self, event: Optional[tkinter.Event] = None):
         self.content_handler.on_prev()
         self.preview_widget.highlight_selected(self.content_handler.current_index)
         self.app_status.STATE = VCState.UPDATE_FILE
 
-    def on_next(self, event: Optional[tkinter.Event] = None):
+    def on_next_file(self, event: Optional[tkinter.Event] = None):
         self.content_handler.on_next()
         self.preview_widget.highlight_selected(self.content_handler.current_index)
         self.app_status.STATE = VCState.UPDATE_FILE
