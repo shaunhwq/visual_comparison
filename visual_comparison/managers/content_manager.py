@@ -55,7 +55,7 @@ class ContentManager:
         return True
 
     def get_title(self):
-        return f"[{self.current_index}/{len(self.current_files)}] {self.current_files[self.current_index]}"
+        return f"[{self.current_index}/{len(self.current_files) - 1}] {self.current_files[self.current_index]}"
 
     def load_files(self, paths):
         self.content_loaders = []
