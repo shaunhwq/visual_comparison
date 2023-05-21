@@ -99,8 +99,11 @@ class PreviewWidget(customtkinter.CTkFrame):
         hide_idxs = curr_idxs - keep_idxs
         show_idxs = next_idxs - keep_idxs
 
-        for idx in hide_idxs:
-            self.buttons[idx].grid_forget()
+        # Hacky way of fixing issue #1, somehow it occurs when number of items is reduced too much?
+        # Anyway, not removing some items does not hit the 30+k pixel limit for the widget.
+        if len(show_idxs) > 0 and max(show_idxs) != len(self.buttons) - 1:
+            for idx in hide_idxs:
+                self.buttons[idx].grid_forget()
         for idx in show_idxs:
             self.buttons[idx].grid(row=0, column=idx)
 
@@ -157,7 +160,6 @@ class PreviewWidget(customtkinter.CTkFrame):
                 # 50 So still got some space for scrolling
                 new_index = max(0, self.view_index - 50)
                 if new_index != self.view_index:
-                    # print("expanding view left")
                     self.place_objects(self.view_index, new_index)
                     self.set_view_by_index(max(0, self.view_index - self.view_radius), "left")
                     self.view_index = new_index
@@ -166,7 +168,6 @@ class PreviewWidget(customtkinter.CTkFrame):
                 # 50 So still got some space for scrolling
                 new_index = min(len(self.buttons) - 1, self.view_index + 50)
                 if new_index != self.view_index and self.view_index + self.view_radius < len(self.buttons):
-                    # print("expanding view right..")
                     self.place_objects(self.view_index, new_index)
                     self.set_view_by_index(min(len(self.buttons) - 1, self.view_index + self.view_radius), "right")
                     self.view_index = new_index
