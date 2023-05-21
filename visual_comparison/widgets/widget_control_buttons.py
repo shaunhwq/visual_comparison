@@ -14,10 +14,12 @@ class ControlButtonsWidget(customtkinter.CTkFrame):
         button_prev.grid(row=1, column=0, padx=5)
         button_method = customtkinter.CTkButton(master=frame_00, text="Method:", command=callbacks["on_select_methods"], width=50, height=25)
         button_method.grid(row=1, column=1, padx=5)
+        button_search = customtkinter.CTkButton(master=frame_00, text="Filter:", command=callbacks["on_filter_files"], width=50, height=25)
+        button_search.grid(row=1, column=2, padx=5)
         button_select_specific = customtkinter.CTkButton(master=frame_00, text="Idx:", command=callbacks["on_specify_index"], width=50, height=25)
-        button_select_specific.grid(row=1, column=2, padx=5)
+        button_select_specific.grid(row=1, column=3, padx=5)
         button_next = customtkinter.CTkButton(master=frame_00, text=">", command=callbacks["on_next"], width=30, height=25)
-        button_next.grid(row=1, column=3, padx=5)
+        button_next.grid(row=1, column=4, padx=5)
         frame_00.grid(row=0, column=0, padx=20)
 
         # For controlling modes

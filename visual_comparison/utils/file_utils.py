@@ -67,6 +67,5 @@ def complete_paths(root, folder, common_names):
     for i in range(len(common_names)):
         uncomplete_path = os.path.join(os.path.join(root, folder), common_names[i]) + ".*"
         paths.append(glob.glob(uncomplete_path)[0])
-    paths.sort()
 
     return paths

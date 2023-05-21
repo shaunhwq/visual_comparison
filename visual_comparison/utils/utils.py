@@ -1,6 +1,6 @@
 
 
-__all__ = ["validate_int_str"]
+__all__ = ["validate_int_str", "validate_float_str"]
 
 
 def validate_int_str(integer_string):
@@ -12,4 +12,15 @@ def validate_int_str(integer_string):
     except ValueError:
         return False, None
 
+    return True, value
+
+
+def validate_float_str(float_string):
+    if float_string is None or float_string == "":
+        return False, None
+
+    try:
+        value = float(float_string)
+    except ValueError:
+        return False, None
     return True, value

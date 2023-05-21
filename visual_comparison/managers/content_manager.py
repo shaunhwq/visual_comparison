@@ -22,16 +22,17 @@ class ContentManager:
 
         self.current_index = 0
         self.current_methods = list(self.methods)
+        self.current_files = list(self.files)
 
     def get_paths(self) -> List[str]:
         """
-        Get path to files for currently selected methods
+        Get path to files for currently selected methods and files
         :return: List of paths
         """
         output_paths = []
         # TODO: Optimize. I think this is a O(n^2) method, if we use dict to map could reduce to O(n)
         for method in self.current_methods:
-            incomplete_path = os.path.join(self.root, method, self.files[self.current_index])
+            incomplete_path = os.path.join(self.root, method, self.current_files[self.current_index])
             completed_paths = glob.glob(incomplete_path + ".*")
             assert len(completed_paths) == 1, completed_paths
             output_paths.append(completed_paths[0])
@@ -42,19 +43,19 @@ class ContentManager:
         self.current_index = max(0, self.current_index - 1)
 
     def on_next(self):
-        self.current_index = min(len(self.files) - 1, self.current_index + 1)
+        self.current_index = min(len(self.current_files) - 1, self.current_index + 1)
 
     def on_specify_index(self, value):
         if value is None:
             return False
-        if not (0 <= value < len(self.files)):
+        if not (0 <= value < len(self.current_files)):
             return False
 
         self.current_index = value
         return True
 
     def get_title(self):
-        return f"[{self.current_index}/{len(self.files)}] {self.files[self.current_index]}"
+        return f"[{self.current_index}/{len(self.current_files)}] {self.current_files[self.current_index]}"
 
     def load_files(self, paths):
         self.content_loaders = []

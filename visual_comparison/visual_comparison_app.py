@@ -9,7 +9,7 @@ import numpy as np
 import customtkinter
 
 from .managers import ZoomManager, ContentManager
-from .widgets import DisplayWidget, ControlButtonsWidget, MultiSelectPopUpWidget, PreviewWidget, get_user_input, VideoControlsWidget
+from .widgets import DisplayWidget, ControlButtonsWidget, MultiSelectPopUpWidget, PreviewWidget, get_user_input, VideoControlsWidget, DataSelectionPopup
 from .enums import VCModes, VCState
 from .utils import image_utils, file_utils, validate_int_str
 
@@ -32,6 +32,9 @@ class VisualComparisonApp(customtkinter.CTk):
     def __init__(self, root, src_folder_name="source"):
         super().__init__()
 
+        self.root = root
+        self.src_folder_name = src_folder_name
+
         # Maintains the selected method & function for the app
         self.app_status = VCInternalState()
 
@@ -49,6 +52,7 @@ class VisualComparisonApp(customtkinter.CTk):
             on_next=self.on_next,
             on_specify_index=self.on_specify_index,
             on_select_methods=self.on_select_methods,
+            on_filter_files=self.on_filter_files,
             on_save_image=self.on_save_image,
             on_copy_image=self.on_copy_image,
         )
@@ -107,6 +111,28 @@ class VisualComparisonApp(customtkinter.CTk):
             self.bind_methods_to_keys()
 
         MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods, app_callback=set_new_methods)
+
+    def on_filter_files(self):
+        def set_new_files(new_files):
+            # Reset app status
+            self.content_handler.current_files = [file[1] for file in new_files]
+            self.cb_widget.set_mode(VCModes.Compare)
+            self.cb_widget.show_method_button(show=False)
+            self.app_status.reset()
+            # Destroy and re-create preview widget
+            # TODO: Reuse widget might be a nicer way to do it
+            self.preview_widget.destroy()
+            self.preview_widget = PreviewWidget(master=self)
+            self.preview_widget.grid(row=0, column=0)
+            src_file_paths = file_utils.complete_paths(self.root, self.src_folder_name, self.content_handler.current_files)
+            self.preview_widget.populate_preview_window(src_file_paths, self.on_specify_index)
+            self.on_specify_index(0)
+
+        column_titles = ["S/N", "File Path"]
+        files = [[idx, file] for idx, file in enumerate(self.content_handler.files)]
+        _, longest_string = max(files, key=lambda row: len(row[1]))
+        text_width = int(400./55 * len(longest_string)) + 25  # Number of pixels for width
+        DataSelectionPopup(files, column_titles=column_titles, callback=set_new_files, text_width=text_width)
 
     def on_pause(self, event=None):
         self.app_status.VIDEO_PAUSED = not self.app_status.VIDEO_PAUSED
