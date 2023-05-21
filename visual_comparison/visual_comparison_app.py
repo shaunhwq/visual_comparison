@@ -195,7 +195,8 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def on_specify_index(self, index=None):
         if index is None:
-            user_input = get_user_input(text="Enter an index:", title="Specify file index")
+            question = f"Enter an index betweeen [0, {len(self.content_handler.current_files)}]"
+            user_input = get_user_input(text=question, title="Specify file index")
             ret, index = validate_int_str(user_input)
             if not ret:
                 pass  # TODO: Add Invalid option error
