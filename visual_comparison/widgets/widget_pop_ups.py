@@ -10,6 +10,21 @@ from ..utils import validate_float_str
 __all__ = ["MultiSelectPopUpWidget", "get_user_input", "FilterRangePopup", "DataSelectionPopup"]
 
 
+# https://stackoverflow.com/questions/67543314/why-are-the-digit-values-in-the-tkinter-items-integers-and-not-strings-even-when
+def _convert_stringval(value):
+    """Converts a value to, hopefully, a more appropriate Python object."""
+    if hasattr(value, 'typename'):
+        value = str(value)
+        try:
+            value = int(value)
+        except (ValueError, TypeError):
+            pass
+    return value
+
+
+ttk._convert_stringval = _convert_stringval
+
+
 class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
     def __init__(self, all_options, current_options, app_callback):
         """
@@ -273,7 +288,9 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         self.refresh_title()
 
     def on_confirm(self):
-        ret_values = [self.child_values(child) for child in self.tree.get_children()]
+        ret_values = []
+        for child in self.tree.get_children():
+            ret_values.append([data_type(item) for data_type, item in zip(self.data_types, self.child_values(child))])
         self.callback(ret_values)
         self.destroy()
 
