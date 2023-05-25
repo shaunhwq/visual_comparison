@@ -133,6 +133,7 @@ class VisualComparisonApp(customtkinter.CTk):
         def set_new_files(rows):
             # Reset app status
             self.content_handler.current_files = [r[1] for r in rows]
+            self.content_handler.current_index = 0
             self.cb_widget.set_mode(VCModes.Compare)
             self.cb_widget.show_method_button(show=False)
             self.app_status.reset()
