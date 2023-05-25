@@ -1,51 +1,55 @@
 # Visual Comparison
 
-## <u> Introduction </u>
-A tool for comparing images & videos.
+## Introduction
+A tool for comparing images & videos, to aid research in image/video enhancement.
 
-Generally, for the image/video enhancement problem, differences between
-enhancement methods are hard to spot. Are you able to spot any differences between these enhanced images?
+- Removes need to generate comparison images
+- Quickly switch between files and methods using keybindings or buttons
+- 3 different comparison modes for more effective comparison
+- Preview and filter window to quickly search, filter and skip to desired images
+- Zoom to see fine details or enhancement
 
-![](documentation_images/hard_comparison.png)
+Simply generate your enhanced images/videos, store it together with outputs from other methods and source images. Then,
+run the application, passing the path to the containing folder as an input.
+
+## Problem
+
+Able to spot the differences?
+
+![](documentation_images/hard_comparison.jpg)
 
 How about now?
 ![]()
 
 | Compare (Up to 4) | Show Specific | Concat |
 | --- | --- | --- |
-| ![](documentation_images/compare.gif) | ![](documentation_images/specific.gif) | ![](documentation_images/concat.png) |
+| ![](documentation_images/compare.gif) | ![](documentation_images/specific.gif) | ![](documentation_images/concat.jpg) |
 | Shows up to 4 files at once. Move mouse accordingly | Shows a single method based on what the user selected (with their keyboard) | Display all files horizontally. Still useful for images with large differences |
 
 Interested in looking at small regions of the image?
 
 | Zoom (Compare) | Zoom (Specific) | Zoom (Concat) |
 | --- | --- | --- |
-| ![](documentation_images/zoom_compare.gif) | ![](documentation_images/zoom_specific.gif) | ![](documentation_images/zoom_concat.png) |
+| ![](documentation_images/zoom_compare.gif) | ![](documentation_images/zoom_specific.gif) | ![](documentation_images/zoom_concat.jpg) |
 
 Many files or methods to compare?
 
-| Mouse/Keyboard Control | Button Control |
-| --- | --- |
-| ![](documentation_images/navigation_ad_scroller.gif) | ![](documentation_images/idx_method_buttons.gif) |
-| Navigate files using 'a', 'd' or arrow keys. Scroll to preview other files | Select which method to compare and jump to specific index |
+| Mouse/Keyboard Control | Button Control | File filtering |
+| --- | --- | --- |
+| ![](documentation_images/navigation_ad_scroller.gif) | ![](documentation_images/idx_method_buttons.gif) | ![](documentation_images/filtering.gif) |
+| Navigate files using 'a', 'd' or arrow keys. Scroll to preview other files | Select which method to compare and jump to specific index | Filter/sort files by name, height, width, etc. |
 
-If you found that this is better, perhaps this tool is for you.
-1. No need to generate comparison images/videos
-2. Use keyboard and mouse to quickly navigate and compare
-3. Various modes of operation for better and faster comparison
+## Usage
 
-Simply generate your enhanced images/videos, store it together with outputs from other methods and source images. Then,
-run the application, passing the path to the containing folder as an input.
+### <u> Installation </u>
 
-## <u> Installation </u>
-
-Either create a virtualenv or conda env. Tested on python 3.8. After activating,
+Create a virtual environment with Python 3.8. Then,
 
 ```
 pip3 install customtkinter opencv-python pillow tqdm
 ```
 
-Next, install the following packages for copy image to clipboard functionality
+Next, install the necessary package for the copy image to clipboard feature
 ```
 # MacOS - None
 
@@ -56,14 +60,14 @@ pip3 install pywin32
 pip3 install klembord
 ```
 
-## <u> Usage </u>
 
-### File Structure and Requirements
-File structure should be as follows:
+### <u> Folder Structure </u>
+
+Your files should be stored in the following manner:
 
 ```
 root
-├── method_1  # Should be name of algorithm
+├── method_1  # Could be name of algorithm or outputs from epoch
     ├── file1
     ├── file2
     └── ...
@@ -71,18 +75,20 @@ root
     ├── file1
     ├── file2
     └── ...
-└── source
+└── source  # source folder (used for preview). Can be specified in run.py
     ├── file1
     ├── file2
     └── ...
 ```
 
-- Requires a minimum of 2 folders since this is a comparison tool.
-- Recommended to store enhanced images in their own folder. File names must be exactly the same as the source file name.
+Requirements
+- Minimum of 2 folders since this is a comparison tool.
+- Each folder contains enhanced images from a single method.
+- Each file must have the same name as the source file.
 - Files which have the same name across <b><u>ALL</u></b> subdirectories will be retrieved.
 - Images & videos should all have the same size (since we need to overlay/crop and join them)
 
-### Running the program
+### <u> Running the program </u>
 ```
 usage: run.py [-h] --root ROOT [--source_folder SOURCE_FOLDER]
 
@@ -93,26 +99,6 @@ optional arguments:
                         Name of source folder
 ```
 
-### Instructions
+## More Info
 
-| Action | Description |
-| --- | --- |
-| Press "1" to "9" | Switches to specific mode, or toggles back to comparison mode |
-| Press "a" or "d" or arrow keys "left" or "right" | Show previous or next file |
-| Press "z" or "c" or arrow keys "up" or "down" | Show previous or next method |
-| Press "space" | Pauses the video (if there is one) |
-| Click on video slider | Skips to selected part of video |
-| Scroll mouse | Moves the preview window |
-| Click in preview window | Changes to selected file |
-| Click on "Method:" | Popup appears to select methods to show |
-| Click on "Idx:" | Popup appears to change to index, must be int and < number files |
-| Ctrl/Cmd + c | Copy current view in display to clipboard, can be pasted elsewhere |
-| Ctrl/Cmd + s | File window popup appears for saving current view to a file |
-
-#### Zooming
-
-| Action | Description |
-| --- | --- |
-| Click on image once | Filled circle appears on screen to indicate first point |
-| Click on image again | Rectangle will appear on screen, and crop region will be displayed together with the original |
-| Click on image again (with 2 points) | Toggle between frozen and unfrozen bounding box |
+For more information and instructions on how to use the application, refer to the [Wiki](https://github.com/shaunhwq/visual_comparison/wiki)
