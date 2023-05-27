@@ -11,7 +11,7 @@ import customtkinter
 from .managers import ZoomManager, ContentManager
 from .widgets import DisplayWidget, ControlButtonsWidget, MultiSelectPopUpWidget, PreviewWidget, get_user_input, VideoControlsWidget, DataSelectionPopup
 from .enums import VCModes, VCState
-from .utils import image_utils, file_utils, validate_int_str
+from .utils import image_utils, validate_int_str
 
 
 @dataclasses.dataclass
@@ -31,21 +31,20 @@ class VCInternalState:
 class VisualComparisonApp(customtkinter.CTk):
     def __init__(self, root, src_folder_name="source"):
         super().__init__()
-
         self.root = root
         self.src_folder_name = src_folder_name
 
         # Maintains the selected method & function for the app
         self.app_status = VCInternalState()
-
         self.content_handler = ContentManager(root, src_folder_name)
-        # configure window
-        self.preview_widget = PreviewWidget(master=self)
-        # File path completion for source folder
+        self.images = None
 
+        # Create Preview Window
+        self.preview_widget = PreviewWidget(master=self)
         self.preview_widget.populate_preview_window(self.content_handler.thumbnails, self.on_specify_index)
         self.preview_widget.grid(row=0, column=0)
 
+        # Create Control Buttons
         cb_callbacks = dict(
             on_prev_file=self.on_prev_file,
             on_specify_index=self.on_specify_index,
@@ -62,16 +61,18 @@ class VisualComparisonApp(customtkinter.CTk):
         self.cb_widget.populate_mode_button(VCModes, self.on_change_mode)
         self.cb_widget.grid(row=1, column=0)
 
+        # Create Video Control Buttons
         vc_callbacks = dict(
             on_set_video_position=self.on_set_video_position,
             on_pause=self.on_pause,
             on_specify_frame_no=self.on_specify_frame_no,
         )
         self.video_controls = VideoControlsWidget(master=self, callbacks=vc_callbacks)
-        self.display_handler = DisplayWidget(self)
+
+        # Create Display Window
+        self.display_handler = DisplayWidget(master=self)
         self.display_handler.grid(row=3, column=0)
 
-        self.images = None
         self.bind("a", self.on_prev_file)
         self.bind("d", self.on_next_file)
         self.bind("<Left>", self.on_prev_file)
