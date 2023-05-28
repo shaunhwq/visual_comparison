@@ -56,10 +56,7 @@ class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
         self.return_value = []
         self.cancelled = True
 
-        # Prevent user interaction
-        self.grab_set()
-
-        self.mainloop()
+        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
@@ -132,6 +129,7 @@ class FilterRangePopup(customtkinter.CTkToplevel):
         equals_ok_button = customtkinter.CTkButton(equals_tab, command=lambda: self.on_ok_pressed("Equals"), text="Ok")
         equals_ok_button.grid(row=2, column=0, columnspan=2, pady=5)
 
+        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
@@ -189,6 +187,7 @@ class FilterTextPopup(customtkinter.CTkToplevel):
         confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm)
         confirm_button.grid(row=2, column=0)
 
+        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
@@ -265,6 +264,7 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         self.return_value = []
         self.cancelled = True
 
+        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
@@ -288,6 +288,7 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         data_type = self.data_types[column_index]
         data_to_filter = [self.child_values(child)[column_index] for child in self.tree.get_children()]
 
+        self.grab_release()
         if data_type is int or data_type is float:
             popup = FilterRangePopup(f"Filtering {column}:", data_to_filter)
             is_cancelled, idxs = popup.get_input()
@@ -296,6 +297,7 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
             is_cancelled, idxs = popup.get_input()
         else:
             raise NotImplementedError(f"Filtering option for data type {data_type} is not implemented")
+        self.grab_set()
 
         if is_cancelled:
             return
