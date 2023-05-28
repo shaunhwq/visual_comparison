@@ -1,3 +1,4 @@
+import time
 from typing import List, Any
 
 import tkinter.ttk as ttk
@@ -7,7 +8,7 @@ import customtkinter
 from ..utils import validate_float_str, shift_widget_to_root_center
 
 
-__all__ = ["MultiSelectPopUpWidget", "FilterRangePopup", "DataSelectionPopup"]
+__all__ = ["MultiSelectPopUpWidget", "FilterRangePopup", "DataSelectionPopup", "MessageBoxPopup"]
 
 
 # https://stackoverflow.com/questions/67543314/why-are-the-digit-values-in-the-tkinter-items-integers-and-not-strings-even-when
@@ -333,3 +334,38 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
     def get_input(self):
         self.master.wait_window(self)
         return self.cancelled, self.return_value
+
+
+class MessageBoxPopup(customtkinter.CTkToplevel):
+    def __init__(self, message, title="Warning", display_time_ms=3000, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.title(title)
+
+        label = customtkinter.CTkLabel(self, wraplength=300, text=message)
+        label.grid(row=0, column=0, padx=20, pady=20)
+        self.close_button = customtkinter.CTkButton(self, command=self.destroy)
+        self.close_button.grid(row=1, column=0, pady=(0, 20))
+
+        self.display_time_ms = display_time_ms
+        self.start_time = time.time()
+        self.button_update_time_ms = 100
+
+        self.after(self.button_update_time_ms, self.update_close_button)
+        self.after(display_time_ms, self.destroy)
+        self.bind("<FocusOut>", self._on_lose_focus)
+
+        self.update_idletasks()
+        shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
+    def _on_lose_focus(self, event):
+        self.destroy()
+
+    def update_close_button(self):
+        time_left_ms = self.display_time_ms - (time.time() - self.start_time) * 1000
+        time_left_s = round(time_left_ms / 1000., 1)
+        self.close_button.configure(text=f"Closing ({time_left_s}s)")
+        self.after(self.button_update_time_ms, self.update_close_button)
+
+    def wait(self):
+        self.master.wait_window(self)
+        self.master.focus_set()

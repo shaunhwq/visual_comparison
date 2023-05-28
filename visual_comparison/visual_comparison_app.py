@@ -1,3 +1,4 @@
+import os
 import tkinter
 from tkinter import filedialog
 from typing import Optional
@@ -9,7 +10,7 @@ import numpy as np
 import customtkinter
 
 from .managers import ZoomManager, ContentManager
-from .widgets import DisplayWidget, ControlButtonsWidget, MultiSelectPopUpWidget, PreviewWidget, VideoControlsWidget, DataSelectionPopup
+from .widgets import DisplayWidget, ControlButtonsWidget, MultiSelectPopUpWidget, PreviewWidget, VideoControlsWidget, DataSelectionPopup, MessageBoxPopup
 from .enums import VCModes, VCState
 from .utils import image_utils, validate_int_str, shift_widget_to_root_center
 
@@ -32,6 +33,13 @@ class VisualComparisonApp(customtkinter.CTk):
     def __init__(self, root, src_folder_name="source"):
         super().__init__()
         self.root = root
+
+        if not os.path.isdir(os.path.join(root, src_folder_name)):
+            new_folder_name = os.listdir(root)[0]
+            message = f"Unable to find folder '{src_folder_name}'. Use first folder '{new_folder_name}' for preview"
+            src_folder_name = new_folder_name
+            popup = MessageBoxPopup(message)
+            popup.wait()
         self.src_folder_name = src_folder_name
 
         # Maintains the selected method & function for the app
@@ -124,7 +132,8 @@ class VisualComparisonApp(customtkinter.CTk):
             return
 
         if len(new_methods) < 2:
-            print(f"Please select more than 2 methods")
+            msg_popup = MessageBoxPopup("Warning: Please select more than 2 methods")
+            msg_popup.wait()
             return
         self.content_handler.current_methods = new_methods
         self.cb_widget.set_mode(VCModes.Compare)
@@ -148,6 +157,8 @@ class VisualComparisonApp(customtkinter.CTk):
             return
 
         if len(rows) == 0:
+            msg_popup = MessageBoxPopup("No items selected. Ignoring selection")
+            msg_popup.wait()
             return
 
         # Setting app states and files
@@ -185,6 +196,8 @@ class VisualComparisonApp(customtkinter.CTk):
             return
         # Check valid index
         if not (0 <= desired_frame_no <= total_num_frames):
+            msg_popup = MessageBoxPopup(f"Index {desired_frame_no} not in range [0, {total_num_frames}]")
+            msg_popup.wait()
             return
 
         self.on_set_video_position(desired_frame_no)
@@ -214,13 +227,15 @@ class VisualComparisonApp(customtkinter.CTk):
 
             ret, index = validate_int_str(user_input)
             if not ret:
-                pass  # TODO: Add Invalid option error
+                msg_popup = MessageBoxPopup(f"Entered an invalid value '{user_input}'")
+                msg_popup.wait()
 
         if self.content_handler.on_specify_index(value=index):
             self.preview_widget.highlight_selected(self.content_handler.current_index)
             self.app_status.STATE = VCState.UPDATE_FILE
         else:
-            pass  # TODO: Add custom error msg
+            msg_popup = MessageBoxPopup(f"Index {index} not in range [0, {len(self.content_handler.current_files) - 1}]")
+            msg_popup.wait()
 
     def on_prev_file(self, event: Optional[tkinter.Event] = None):
         self.content_handler.on_prev()
