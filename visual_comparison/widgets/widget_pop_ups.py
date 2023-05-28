@@ -4,7 +4,7 @@ import tkinter.ttk as ttk
 import tkinter
 import customtkinter
 
-from ..utils import validate_float_str
+from ..utils import validate_float_str, shift_widget_to_root_center
 
 
 __all__ = ["MultiSelectPopUpWidget", "FilterRangePopup", "DataSelectionPopup"]
@@ -270,9 +270,11 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
 
         if data_type is int or data_type is float:
             popup = FilterRangePopup(f"Filtering {column}:", data_to_filter)
+            shift_widget_to_root_center(parent_widget=self, child_widget=popup)
             idxs = popup.get_input()
         elif data_type is str:
             popup = FilterTextPopup(f"Column: {column}", data_to_filter)
+            shift_widget_to_root_center(parent_widget=self, child_widget=popup)
             idxs = popup.get_input()
         else:
             raise NotImplementedError(f"Filtering option for data type {data_type} is not implemented")

@@ -11,7 +11,7 @@ import customtkinter
 from .managers import ZoomManager, ContentManager
 from .widgets import DisplayWidget, ControlButtonsWidget, MultiSelectPopUpWidget, PreviewWidget, VideoControlsWidget, DataSelectionPopup
 from .enums import VCModes, VCState
-from .utils import image_utils, validate_int_str
+from .utils import image_utils, validate_int_str, shift_widget_to_root_center
 
 
 @dataclasses.dataclass
@@ -118,6 +118,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def on_select_methods(self):
         popup = MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods)
+        shift_widget_to_root_center(parent_widget=self, child_widget=popup)
         new_methods = popup.get_input()
 
         if len(new_methods) < 2:
@@ -139,6 +140,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
         # Get data from popup
         popup = DataSelectionPopup(self.content_handler.data, column_titles=titles, text_width=text_width)
+        shift_widget_to_root_center(parent_widget=self, child_widget=popup)
         rows = popup.get_input()
         if len(rows) == 0:
             return
@@ -169,6 +171,7 @@ class VisualComparisonApp(customtkinter.CTk):
         _, total_num_frames, _ = self.content_handler.get_video_position()
 
         dialog = customtkinter.CTkInputDialog(text=f"Enter frame number in range [0, {total_num_frames}]", title="Specify frame number")
+        shift_widget_to_root_center(parent_widget=self, child_widget=dialog)
         user_input = dialog.get_input()
         ret, desired_frame_no = validate_int_str(user_input)
 
@@ -201,6 +204,7 @@ class VisualComparisonApp(customtkinter.CTk):
         if index is None:
             question = f"Enter an index betweeen [0, {len(self.content_handler.current_files)}]"
             dialog = customtkinter.CTkInputDialog(text=question, title="Specify file index")
+            shift_widget_to_root_center(parent_widget=self, child_widget=dialog)
             user_input = dialog.get_input()
 
             ret, index = validate_int_str(user_input)
