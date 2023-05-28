@@ -132,7 +132,7 @@ class VisualComparisonApp(customtkinter.CTk):
             return
 
         if len(new_methods) < 2:
-            msg_popup = MessageBoxPopup("Warning: Please select more than 2 methods")
+            msg_popup = MessageBoxPopup("Please select more than 2 methods")
             msg_popup.wait()
             return
         self.content_handler.current_methods = new_methods
