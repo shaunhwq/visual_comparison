@@ -53,6 +53,7 @@ class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
             self.checkboxes.append(checkbox)
 
         self.return_value = []
+        self.cancelled = True
 
         # Prevent user interaction
         self.grab_set()
@@ -82,17 +83,20 @@ class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
     def _on_ok_pressed(self):
         methods_to_display = [checkbox.cget("text") for checkbox in self.checkboxes if checkbox.get()]
         self.return_value = methods_to_display
+        self.cancelled = False
         self.destroy()
 
     def get_input(self):
         self.master.wait_window(self)
-        return self.return_value
+        return self.cancelled, self.return_value
 
 
 class FilterRangePopup(customtkinter.CTkToplevel):
     def __init__(self, title, values):
         super().__init__()
         self.values = values
+
+        self.cancelled = True
         self.return_value = []
 
         self.geometry("345x200")
@@ -146,11 +150,12 @@ class FilterRangePopup(customtkinter.CTkToplevel):
             raise NotImplementedError("Invalid tab option")
 
         self.return_value = selected_idxs
+        self.cancelled = False
         self.destroy()
 
     def get_input(self):
         self.master.wait_window(self)
-        return self.return_value
+        return self.cancelled, self.return_value
 
 
 class FilterTextPopup(customtkinter.CTkToplevel):
@@ -159,6 +164,7 @@ class FilterTextPopup(customtkinter.CTkToplevel):
         self.title("Filter Text")
 
         self.strings_to_filter = strings_to_filter
+        self.cancelled = True
         self.return_values = []
 
         display_label = customtkinter.CTkLabel(self, text=display_text)
@@ -192,11 +198,12 @@ class FilterTextPopup(customtkinter.CTkToplevel):
             raise NotImplementedError(f"'{query_string}' operation not implemented")
 
         self.return_values = selected_idxs
+        self.cancelled = False
         self.destroy()
 
     def get_input(self):
         self.master.wait_window(self)
-        return self.return_values
+        return self.cancelled, self.return_values
 
 
 class DataSelectionPopup(customtkinter.CTkToplevel):
@@ -247,6 +254,7 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         confirm_button.grid(row=2, column=0, pady=(0, 5))
 
         self.return_value = []
+        self.cancelled = True
 
     def child_values(self, child):
         return self.tree.item(child)["values"]
@@ -271,13 +279,16 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         if data_type is int or data_type is float:
             popup = FilterRangePopup(f"Filtering {column}:", data_to_filter)
             shift_widget_to_root_center(parent_widget=self, child_widget=popup)
-            idxs = popup.get_input()
+            is_cancelled, idxs = popup.get_input()
         elif data_type is str:
             popup = FilterTextPopup(f"Column: {column}", data_to_filter)
             shift_widget_to_root_center(parent_widget=self, child_widget=popup)
-            idxs = popup.get_input()
+            is_cancelled, idxs = popup.get_input()
         else:
             raise NotImplementedError(f"Filtering option for data type {data_type} is not implemented")
+
+        if is_cancelled:
+            return
 
         keep_idxs = set(idxs)
         idx_to_remove = [c for idx, c in enumerate(self.tree.get_children()) if idx not in keep_idxs]
@@ -298,6 +309,7 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
     def on_confirm(self):
         for child in self.tree.get_children():
             self.return_value.append([data_type(item) for data_type, item in zip(self.data_types, self.child_values(child))])
+        self.cancelled = False
         self.destroy()
 
     def on_reset(self):
@@ -311,4 +323,4 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
 
     def get_input(self):
         self.master.wait_window(self)
-        return self.return_value
+        return self.cancelled, self.return_value
