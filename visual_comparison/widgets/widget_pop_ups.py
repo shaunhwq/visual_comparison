@@ -5,10 +5,16 @@ import tkinter.ttk as ttk
 import tkinter
 import customtkinter
 
-from ..utils import validate_float_str, shift_widget_to_root_center
+from ..utils import validate_float_str, shift_widget_to_root_center, validate_int_str
 
 
-__all__ = ["MultiSelectPopUpWidget", "FilterRangePopup", "DataSelectionPopup", "MessageBoxPopup"]
+__all__ = [
+    "MultiSelectPopUpWidget",
+    "FilterRangePopup",
+    "DataSelectionPopup",
+    "MessageBoxPopup",
+    "GetIntBetweenRangePopup"
+]
 
 
 # https://stackoverflow.com/questions/67543314/why-are-the-digit-values-in-the-tkinter-items-integers-and-not-strings-even-when
@@ -371,3 +377,55 @@ class MessageBoxPopup(customtkinter.CTkToplevel):
     def wait(self):
         self.master.wait_window(self)
         self.master.focus_set()
+
+
+class GetIntBetweenRangePopup(customtkinter.CTkToplevel):
+    def __init__(self, text, title, lower_bound=1e-10, upper_bound=1e10, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.title(title)
+
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+
+        prompt_label = customtkinter.CTkLabel(self, text=text, wraplength=300)
+        prompt_label.grid(row=0, column=0, columnspan=2, padx=20, pady=20)
+        self.entry = customtkinter.CTkEntry(self)
+        self.entry.grid(row=1, column=0, columnspan=2, padx=20, pady=(0, 20))
+        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm)
+        confirm_button.grid(row=2, column=0, padx=20, pady=(0, 20))
+        cancel_button = customtkinter.CTkButton(self, text="Cancel", command=self.destroy)
+        cancel_button.grid(row=2, column=1, padx=(0, 20), pady=(0, 20))
+
+        self.return_value = None
+        self.cancelled = True
+
+        self.grab_set()  # make other windows not clickable
+        self.update_idletasks()
+        shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
+    def on_confirm(self):
+        user_input = self.entry.get()
+        ret, value = validate_int_str(user_input)
+
+        if not ret:
+            self.grab_release()
+            msg_popup = MessageBoxPopup(f"Provided value '{user_input}' is not an integer")
+            msg_popup.wait()
+            self.grab_set()
+            return
+
+        # Check valid index
+        if not (self.lower_bound <= value <= self.upper_bound):
+            self.grab_release()
+            msg_popup = MessageBoxPopup(f"Index {value} not in range [{self.lower_bound}, {self.upper_bound}]")
+            msg_popup.wait()
+            self.grab_set()
+            return
+
+        self.return_value = value
+        self.cancelled = False
+        self.destroy()
+
+    def get_input(self):
+        self.master.wait_window(self)
+        return self.cancelled, self.return_value

@@ -10,9 +10,10 @@ import numpy as np
 import customtkinter
 
 from .managers import ZoomManager, ContentManager
-from .widgets import DisplayWidget, ControlButtonsWidget, MultiSelectPopUpWidget, PreviewWidget, VideoControlsWidget, DataSelectionPopup, MessageBoxPopup
+from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
+from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetIntBetweenRangePopup
 from .enums import VCModes, VCState
-from .utils import image_utils, validate_int_str, shift_widget_to_root_center
+from .utils import image_utils
 
 
 @dataclasses.dataclass
@@ -186,18 +187,14 @@ class VisualComparisonApp(customtkinter.CTk):
 
         _, total_num_frames, _ = self.content_handler.get_video_position()
 
-        dialog = customtkinter.CTkInputDialog(text=f"Enter frame number in range [0, {total_num_frames}]", title="Specify frame number")
-        shift_widget_to_root_center(parent_widget=self, child_widget=dialog)
-        user_input = dialog.get_input()
-        ret, desired_frame_no = validate_int_str(user_input)
-
-        # Check valid str
-        if not ret:
-            return
-        # Check valid index
-        if not (0 <= desired_frame_no <= total_num_frames):
-            msg_popup = MessageBoxPopup(f"Index {desired_frame_no} not in range [0, {total_num_frames}]")
-            msg_popup.wait()
+        popup = GetIntBetweenRangePopup(
+            text=f"Enter frame number in range [0, {total_num_frames}]",
+            title="Specify frame number",
+            lower_bound=0,
+            upper_bound=total_num_frames
+        )
+        is_cancelled, desired_frame_no = popup.get_input()
+        if is_cancelled:
             return
 
         self.on_set_video_position(desired_frame_no)
@@ -219,23 +216,28 @@ class VisualComparisonApp(customtkinter.CTk):
             self.images = images
 
     def on_specify_index(self, index=None):
+        upper_bound = len(self.content_handler.current_files) - 1
         if index is None:
-            question = f"Enter an index betweeen [0, {len(self.content_handler.current_files) - 1}]"
-            dialog = customtkinter.CTkInputDialog(text=question, title="Specify file index")
-            shift_widget_to_root_center(parent_widget=self, child_widget=dialog)
-            user_input = dialog.get_input()
+            popup = GetIntBetweenRangePopup(
+                text=f"Enter an index betweeen [0, {len(self.content_handler.current_files) - 1}]",
+                title="Specify file index",
+                lower_bound=0,
+                upper_bound=upper_bound,
+            )
+            is_cancelled, index = popup.get_input()
+            if is_cancelled:
+                return
 
-            ret, index = validate_int_str(user_input)
-            if not ret:
-                msg_popup = MessageBoxPopup(f"Entered an invalid value '{user_input}'")
-                msg_popup.wait()
-
-        if self.content_handler.on_specify_index(value=index):
-            self.preview_widget.highlight_selected(self.content_handler.current_index)
-            self.app_status.STATE = VCState.UPDATE_FILE
-        else:
-            msg_popup = MessageBoxPopup(f"Index {index} not in range [0, {len(self.content_handler.current_files) - 1}]")
+        # Need to verify when on_specify_index is called with not None index
+        ret = self.content_handler.on_specify_index(value=index)
+        if not ret:
+            message = f"Index {index} not in range [0, {upper_bound}]"
+            msg_popup = MessageBoxPopup(message)
             msg_popup.wait()
+            return
+
+        self.preview_widget.highlight_selected(self.content_handler.current_index)
+        self.app_status.STATE = VCState.UPDATE_FILE
 
     def on_prev_file(self, event: Optional[tkinter.Event] = None):
         self.content_handler.on_prev()
