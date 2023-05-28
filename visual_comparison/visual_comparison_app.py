@@ -68,6 +68,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.cb_widget = ControlButtonsWidget(master=self, callbacks=cb_callbacks)
         self.cb_widget.populate_methods_button(self.content_handler.current_methods, self.on_change_mode)
         self.cb_widget.populate_mode_button(VCModes, self.on_change_mode)
+        self.cb_widget.set_mode(VCModes.Compare)
         self.cb_widget.grid(row=1, column=0)
 
         # Create Video Control Buttons
