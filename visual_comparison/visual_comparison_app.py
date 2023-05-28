@@ -202,7 +202,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def on_specify_index(self, index=None):
         if index is None:
-            question = f"Enter an index betweeen [0, {len(self.content_handler.current_files)}]"
+            question = f"Enter an index betweeen [0, {len(self.content_handler.current_files) - 1}]"
             dialog = customtkinter.CTkInputDialog(text=question, title="Specify file index")
             shift_widget_to_root_center(parent_widget=self, child_widget=dialog)
             user_input = dialog.get_input()
