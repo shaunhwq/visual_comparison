@@ -370,7 +370,7 @@ class MessageBoxPopup(customtkinter.CTkToplevel):
 
     def update_close_button(self):
         time_left_ms = self.display_time_ms - (time.time() - self.start_time) * 1000
-        time_left_s = round(time_left_ms / 1000., 1)
+        time_left_s = int(time_left_ms / 1000) + 1
         self.close_button.configure(text=f"Closing ({time_left_s}s)")
         self.after(self.button_update_time_ms, self.update_close_button)
 
