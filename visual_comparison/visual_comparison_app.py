@@ -9,7 +9,7 @@ import numpy as np
 import customtkinter
 
 from .managers import ZoomManager, ContentManager
-from .widgets import DisplayWidget, ControlButtonsWidget, MultiSelectPopUpWidget, PreviewWidget, get_user_input, VideoControlsWidget, DataSelectionPopup
+from .widgets import DisplayWidget, ControlButtonsWidget, MultiSelectPopUpWidget, PreviewWidget, VideoControlsWidget, DataSelectionPopup
 from .enums import VCModes, VCState
 from .utils import image_utils, validate_int_str
 
@@ -117,41 +117,46 @@ class VisualComparisonApp(customtkinter.CTk):
             self.bind(f"<KP_{i + 1}>", lambda event: self.on_change_mode(VCModes.Specific, current_methods[int(event.keysym.split("_")[1]) - 1]))
 
     def on_select_methods(self):
-        def set_new_methods(new_methods):
-            if len(new_methods) < 2:
-                print(f"Please select more than 2 methods")
-                return
-            self.content_handler.current_methods = new_methods
-            self.cb_widget.set_mode(VCModes.Compare)
-            self.cb_widget.show_method_button(show=False)
-            self.app_status.reset()
-            self.cb_widget.populate_methods_button(new_methods, self.on_change_mode)
-            self.bind_methods_to_keys()
+        popup = MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods)
+        new_methods = popup.get_input()
 
-        MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods, app_callback=set_new_methods)
+        if len(new_methods) < 2:
+            print(f"Please select more than 2 methods")
+            return
+        self.content_handler.current_methods = new_methods
+        self.cb_widget.set_mode(VCModes.Compare)
+        self.cb_widget.show_method_button(show=False)
+        self.app_status.reset()
+        self.cb_widget.populate_methods_button(new_methods, self.on_change_mode)
+        self.bind_methods_to_keys()
 
     def on_filter_files(self):
-        def set_new_files(rows):
-            # Reset app status
-            self.content_handler.current_files = [r[1] for r in rows]
-            self.content_handler.current_index = 0
-            self.cb_widget.set_mode(VCModes.Compare)
-            self.cb_widget.show_method_button(show=False)
-            self.app_status.reset()
-            # Destroy and re-create preview widget
-            # TODO: Reuse widget might be a nicer way to do it
-            self.preview_widget.destroy()
-            self.preview_widget = PreviewWidget(master=self)
-            self.preview_widget.grid(row=0, column=0)
-            selected_thumbnails = [self.content_handler.thumbnails[r[0]] for r in rows]
-            self.preview_widget.populate_preview_window(selected_thumbnails, self.on_specify_index)
-            self.on_specify_index(0)
-
+        # Prepare data for populating popup
         row = max(self.content_handler.data, key=lambda row: len(row[1]))
         text_width = int(400./55 * len(row[1])) + 25  # Number of pixels for width
         num_titles = max(len(d) for d in self.content_handler.data)
         titles = self.content_handler.data_titles[: num_titles]
-        DataSelectionPopup(self.content_handler.data, column_titles=titles, callback=set_new_files, text_width=text_width)
+
+        # Get data from popup
+        popup = DataSelectionPopup(self.content_handler.data, column_titles=titles, text_width=text_width)
+        rows = popup.get_input()
+        if len(rows) == 0:
+            return
+
+        # Setting app states and files
+        self.content_handler.current_files = [r[1] for r in rows]
+        self.content_handler.current_index = 0
+        self.cb_widget.set_mode(VCModes.Compare)
+        self.cb_widget.show_method_button(show=False)
+        self.app_status.reset()
+
+        # Destroy and re-create preview widget TODO: Try reuse
+        self.preview_widget.destroy()
+        self.preview_widget = PreviewWidget(master=self)
+        self.preview_widget.grid(row=0, column=0)
+        selected_thumbnails = [self.content_handler.thumbnails[r[0]] for r in rows]
+        self.preview_widget.populate_preview_window(selected_thumbnails, self.on_specify_index)
+        self.on_specify_index(0)
 
     def on_pause(self, event=None):
         self.app_status.VIDEO_PAUSED = not self.app_status.VIDEO_PAUSED
@@ -163,10 +168,8 @@ class VisualComparisonApp(customtkinter.CTk):
 
         _, total_num_frames, _ = self.content_handler.get_video_position()
 
-        user_input = get_user_input(
-            text=f"Enter frame number in range [0, {total_num_frames}]",
-            title="Specify frame number"
-        )
+        dialog = customtkinter.CTkInputDialog(text=f"Enter frame number in range [0, {total_num_frames}]", title="Specify frame number")
+        user_input = dialog.get_input()
         ret, desired_frame_no = validate_int_str(user_input)
 
         # Check valid str
@@ -197,7 +200,9 @@ class VisualComparisonApp(customtkinter.CTk):
     def on_specify_index(self, index=None):
         if index is None:
             question = f"Enter an index betweeen [0, {len(self.content_handler.current_files)}]"
-            user_input = get_user_input(text=question, title="Specify file index")
+            dialog = customtkinter.CTkInputDialog(text=question, title="Specify file index")
+            user_input = dialog.get_input()
+
             ret, index = validate_int_str(user_input)
             if not ret:
                 pass  # TODO: Add Invalid option error

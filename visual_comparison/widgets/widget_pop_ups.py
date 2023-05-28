@@ -7,7 +7,7 @@ import customtkinter
 from ..utils import validate_float_str
 
 
-__all__ = ["MultiSelectPopUpWidget", "get_user_input", "FilterRangePopup", "DataSelectionPopup"]
+__all__ = ["MultiSelectPopUpWidget", "FilterRangePopup", "DataSelectionPopup"]
 
 
 # https://stackoverflow.com/questions/67543314/why-are-the-digit-values-in-the-tkinter-items-integers-and-not-strings-even-when
@@ -26,15 +26,12 @@ ttk._convert_stringval = _convert_stringval
 
 
 class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
-    def __init__(self, all_options, current_options, app_callback):
+    def __init__(self, all_options, current_options):
         """
         :param all_options: All possible options
         :param current_options: Currently selected options
-        :param app_callback: Callback called when confirm button is pressed. Pass a list of strings.
         """
         super().__init__()
-        self.app_callback = app_callback
-
         reset_button = customtkinter.CTkButton(master=self, text="Reset", command=self._on_reset_pressed)
         reset_button.pack(padx=5, pady=5)
         ok_button = customtkinter.CTkButton(master=self, text="Confirm", command=self._on_ok_pressed)
@@ -54,6 +51,8 @@ class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
             if i < len(current_options):
                 checkbox.select()
             self.checkboxes.append(checkbox)
+
+        self.return_value = []
 
         # Prevent user interaction
         self.grab_set()
@@ -82,23 +81,20 @@ class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
 
     def _on_ok_pressed(self):
         methods_to_display = [checkbox.cget("text") for checkbox in self.checkboxes if checkbox.get()]
-        self.app_callback(methods_to_display)
+        self.return_value = methods_to_display
         self.destroy()
 
-
-def get_user_input(text, title):
-    dialog = customtkinter.CTkInputDialog(text=text, title=title)
-    # Prevent user interaction
-    dialog.grab_set()
-    dialog_str = dialog.get_input()
-    return dialog_str
+    def get_input(self):
+        self.master.wait_window(self)
+        return self.return_value
 
 
 class FilterRangePopup(customtkinter.CTkToplevel):
-    def __init__(self, title, values, callback):
+    def __init__(self, title, values):
         super().__init__()
-        self.callback = callback
         self.values = values
+        self.return_value = []
+
         self.geometry("345x200")
         self.title("Specify Range/Value")
 
@@ -149,17 +145,21 @@ class FilterRangePopup(customtkinter.CTkToplevel):
         else:
             raise NotImplementedError("Invalid tab option")
 
-        self.callback(selected_idxs)
+        self.return_value = selected_idxs
         self.destroy()
+
+    def get_input(self):
+        self.master.wait_window(self)
+        return self.return_value
 
 
 class FilterTextPopup(customtkinter.CTkToplevel):
-    def __init__(self, display_text, strings_to_filter, callback, *args, **kwargs):
+    def __init__(self, display_text, strings_to_filter, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title("Filter Text")
 
         self.strings_to_filter = strings_to_filter
-        self.callback = callback
+        self.return_values = []
 
         display_label = customtkinter.CTkLabel(self, text=display_text)
         display_label.grid(row=0, column=0)
@@ -191,14 +191,17 @@ class FilterTextPopup(customtkinter.CTkToplevel):
             query_string = f"Select where {text} {condition} file"
             raise NotImplementedError(f"'{query_string}' operation not implemented")
 
-        self.callback(selected_idxs)
+        self.return_values = selected_idxs
         self.destroy()
+
+    def get_input(self):
+        self.master.wait_window(self)
+        return self.return_values
 
 
 class DataSelectionPopup(customtkinter.CTkToplevel):
-    def __init__(self, data: List[List], column_titles: List[str], callback, text_width=400, number_width=50, *args, **kwargs):
+    def __init__(self, data: List[List], column_titles: List[str], text_width=400, number_width=50, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.callback = callback
         self.data = list(data)
         self.column_titles = column_titles
         self.data_types = [type(val) for val in data[0]]
@@ -243,6 +246,8 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm, height=25)
         confirm_button.grid(row=2, column=0, pady=(0, 5))
 
+        self.return_value = []
+
     def child_values(self, child):
         return self.tree.item(child)["values"]
 
@@ -259,22 +264,23 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
             self.tree.insert("", position, values=item)
 
     def filter_options(self, column):
-        def keep_idx(idxs):
-            idxs = set(idxs)
-            idx_to_remove = [c for idx, c in enumerate(self.tree.get_children()) if idx not in idxs]
-            self.tree_remove(idx_to_remove)
-            self.refresh_title()
-
         column_index = self.column_titles.index(column)
         data_type = self.data_types[column_index]
         data_to_filter = [self.child_values(child)[column_index] for child in self.tree.get_children()]
 
         if data_type is int or data_type is float:
-            FilterRangePopup(f"Filtering {column}:", data_to_filter, callback=keep_idx)
+            popup = FilterRangePopup(f"Filtering {column}:", data_to_filter)
+            idxs = popup.get_input()
         elif data_type is str:
-            FilterTextPopup(f"Column: {column}", data_to_filter, callback=keep_idx)
+            popup = FilterTextPopup(f"Column: {column}", data_to_filter)
+            idxs = popup.get_input()
         else:
             raise NotImplementedError(f"Filtering option for data type {data_type} is not implemented")
+
+        keep_idxs = set(idxs)
+        idx_to_remove = [c for idx, c in enumerate(self.tree.get_children()) if idx not in keep_idxs]
+        self.tree_remove(idx_to_remove)
+        self.refresh_title()
 
     def sort_rows(self, col_idx):
         self.col_sort_reverse[col_idx] = not self.col_sort_reverse[col_idx]
@@ -288,10 +294,8 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         self.refresh_title()
 
     def on_confirm(self):
-        ret_values = []
         for child in self.tree.get_children():
-            ret_values.append([data_type(item) for data_type, item in zip(self.data_types, self.child_values(child))])
-        self.callback(ret_values)
+            self.return_value.append([data_type(item) for data_type, item in zip(self.data_types, self.child_values(child))])
         self.destroy()
 
     def on_reset(self):
@@ -302,3 +306,7 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
 
     def refresh_title(self):
         self.title(f"Data Selection. Num Items: {len(self.tree.get_children())}")
+
+    def get_input(self):
+        self.master.wait_window(self)
+        return self.return_value
