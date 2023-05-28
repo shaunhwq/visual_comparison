@@ -118,7 +118,6 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def on_select_methods(self):
         popup = MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods)
-        shift_widget_to_root_center(parent_widget=self, child_widget=popup)
         is_cancelled, new_methods = popup.get_input()
 
         if is_cancelled:
@@ -143,7 +142,6 @@ class VisualComparisonApp(customtkinter.CTk):
 
         # Get data from popup
         popup = DataSelectionPopup(self.content_handler.data, column_titles=titles, text_width=text_width)
-        shift_widget_to_root_center(parent_widget=self, child_widget=popup)
         is_cancelled, rows = popup.get_input()
 
         if is_cancelled:

@@ -59,6 +59,8 @@ class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
         self.grab_set()
 
         self.mainloop()
+        self.update_idletasks()
+        shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
     def _on_checkbox_checked(self):
         new_list = [checkbox for checkbox in self.checkboxes if checkbox.get()]
@@ -129,6 +131,9 @@ class FilterRangePopup(customtkinter.CTkToplevel):
         equals_ok_button = customtkinter.CTkButton(equals_tab, command=lambda: self.on_ok_pressed("Equals"), text="Ok")
         equals_ok_button.grid(row=2, column=0, columnspan=2, pady=5)
 
+        self.update_idletasks()
+        shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
     def on_ok_pressed(self, tab):
         if tab == "Range":
             l_ret, lower_val = validate_float_str(self.lower_text_box.get())
@@ -182,6 +187,9 @@ class FilterTextPopup(customtkinter.CTkToplevel):
 
         confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm)
         confirm_button.grid(row=2, column=0)
+
+        self.update_idletasks()
+        shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
     def on_confirm(self):
         condition = self.condition_combo_box.get()
@@ -256,6 +264,9 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         self.return_value = []
         self.cancelled = True
 
+        self.update_idletasks()
+        shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
     def child_values(self, child):
         return self.tree.item(child)["values"]
 
@@ -278,11 +289,9 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
 
         if data_type is int or data_type is float:
             popup = FilterRangePopup(f"Filtering {column}:", data_to_filter)
-            shift_widget_to_root_center(parent_widget=self, child_widget=popup)
             is_cancelled, idxs = popup.get_input()
         elif data_type is str:
             popup = FilterTextPopup(f"Column: {column}", data_to_filter)
-            shift_widget_to_root_center(parent_widget=self, child_widget=popup)
             is_cancelled, idxs = popup.get_input()
         else:
             raise NotImplementedError(f"Filtering option for data type {data_type} is not implemented")
