@@ -5,7 +5,7 @@ import tkinter.ttk as ttk
 import tkinter
 import customtkinter
 
-from ..utils import validate_float_str, shift_widget_to_root_center, validate_int_str
+from ..utils import validate_number_str, shift_widget_to_root_center
 
 
 __all__ = [
@@ -13,7 +13,7 @@ __all__ = [
     "FilterRangePopup",
     "DataSelectionPopup",
     "MessageBoxPopup",
-    "GetIntBetweenRangePopup"
+    "GetNumberBetweenRangePopup"
 ]
 
 
@@ -141,8 +141,8 @@ class FilterRangePopup(customtkinter.CTkToplevel):
 
     def on_ok_pressed(self, tab):
         if tab == "Range":
-            l_ret, lower_val = validate_float_str(self.lower_text_box.get())
-            u_ret, upper_val = validate_float_str(self.upper_text_box.get())
+            l_ret, lower_val = validate_number_str(self.lower_text_box.get(), desired_type=float)
+            u_ret, upper_val = validate_number_str(self.upper_text_box.get(), desired_type=float)
             if not (l_ret and u_ret):
                 self.error_label.configure(text="Error parsing values")
                 return
@@ -151,7 +151,7 @@ class FilterRangePopup(customtkinter.CTkToplevel):
                 return
             selected_idxs = [idx for idx, value in enumerate(self.values) if lower_val <= float(value) <= upper_val]
         elif tab == "Equals":
-            ret, equals_val = validate_float_str(self.equals_text_box.get())
+            ret, equals_val = validate_number_str(self.equals_text_box.get(), desired_type=float)
             if not ret:
                 self.error_label.configure(text="Error parsing values")
                 return
@@ -379,11 +379,14 @@ class MessageBoxPopup(customtkinter.CTkToplevel):
         self.master.focus_set()
 
 
-class GetIntBetweenRangePopup(customtkinter.CTkToplevel):
-    def __init__(self, text, title, lower_bound=1e-10, upper_bound=1e10, *args, **kwargs):
+class GetNumberBetweenRangePopup(customtkinter.CTkToplevel):
+    def __init__(self, text, title, desired_type, lower_bound=float("-inf"), upper_bound=float("inf"), *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title(title)
+        if not (desired_type is int or desired_type is float):
+            raise ValueError("desired_type should be either int or float")
 
+        self.desired_type = desired_type
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
 
@@ -405,11 +408,11 @@ class GetIntBetweenRangePopup(customtkinter.CTkToplevel):
 
     def on_confirm(self):
         user_input = self.entry.get()
-        ret, value = validate_int_str(user_input)
+        ret, value = validate_number_str(user_input, desired_type=self.desired_type)
 
         if not ret:
             self.grab_release()
-            msg_popup = MessageBoxPopup(f"Provided value '{user_input}' is not an integer")
+            msg_popup = MessageBoxPopup(f"Unable to cast '{user_input}' to {self.desired_type.__name__}")
             msg_popup.wait()
             self.grab_set()
             return

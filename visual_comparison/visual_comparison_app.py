@@ -11,7 +11,7 @@ import customtkinter
 
 from .managers import ZoomManager, ContentManager
 from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
-from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetIntBetweenRangePopup
+from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup
 from .enums import VCModes, VCState
 from .utils import image_utils
 
@@ -188,9 +188,10 @@ class VisualComparisonApp(customtkinter.CTk):
 
         _, total_num_frames, _ = self.content_handler.get_video_position()
 
-        popup = GetIntBetweenRangePopup(
+        popup = GetNumberBetweenRangePopup(
             text=f"Enter frame number in range [0, {total_num_frames}]",
             title="Specify frame number",
+            desired_type=int,
             lower_bound=0,
             upper_bound=total_num_frames
         )
@@ -219,9 +220,10 @@ class VisualComparisonApp(customtkinter.CTk):
     def on_specify_index(self, index=None):
         upper_bound = len(self.content_handler.current_files) - 1
         if index is None:
-            popup = GetIntBetweenRangePopup(
+            popup = GetNumberBetweenRangePopup(
                 text=f"Enter an index betweeen [0, {len(self.content_handler.current_files) - 1}]",
                 title="Specify file index",
+                desired_type=int,
                 lower_bound=0,
                 upper_bound=upper_bound,
             )
