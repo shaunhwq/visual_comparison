@@ -316,7 +316,8 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
     def sort_rows(self, col_idx):
         self.col_sort_reverse[col_idx] = not self.col_sort_reverse[col_idx]
         rows = [self.child_values(child) for child in self.tree.get_children()]
-        rows.sort(key=lambda row: row[col_idx], reverse=self.col_sort_reverse[col_idx])
+        data_type = self.data_types[col_idx]
+        rows.sort(key=lambda row: data_type(row[col_idx]), reverse=self.col_sort_reverse[col_idx])
         self.tree_remove()
         self.tree_add(rows)
 
