@@ -11,16 +11,16 @@ __all__ = [
 ]
 
 
-def get_folders(root, src_folder_name) -> List[str]:
+def get_folders(root, preview_folder) -> List[str]:
     """
     :param root: Root folder with sub-folders containing images to compare
-    :param src_folder_name: Name of source folder
-    :return: List of folder names, with source folder as first item
+    :param preview_folder: Name of folder to preview
+    :return: List of folder names, with preview folder as first item
     """
     # Contains method name (folder name)
     folders = [folder for folder in os.listdir(root) if folder[0] != "."]
-    if src_folder_name in folders:
-        folders.insert(0, folders.pop(folders.index(src_folder_name)))
+    if preview_folder in folders:
+        folders.insert(0, folders.pop(folders.index(preview_folder)))
     return folders
 
 

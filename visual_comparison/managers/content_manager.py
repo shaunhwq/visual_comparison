@@ -14,11 +14,11 @@ __all__ = ["ContentManager"]
 
 
 class ContentManager:
-    def __init__(self, root, src_folder_name):
+    def __init__(self, root, preview_folder):
         self.root = root
-        self.src_folder_name = src_folder_name
+        self.preview_folder = preview_folder
 
-        self.methods = file_utils.get_folders(root, src_folder_name)
+        self.methods = file_utils.get_folders(root, preview_folder)
         self.files = file_utils.get_filenames(root, self.methods)
 
         self.content_loaders = None
@@ -40,7 +40,7 @@ class ContentManager:
             return
 
         # Load images for preview window. Multi thread for faster reading.
-        file_paths = file_utils.complete_paths(self.root, self.src_folder_name, self.files)
+        file_paths = file_utils.complete_paths(self.root, self.preview_folder, self.files)
 
         with ThreadPoolExecutor() as executor:
             return_values = tqdm(iterable=executor.map(self.load_file_info, file_paths),

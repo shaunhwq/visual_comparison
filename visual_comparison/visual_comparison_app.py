@@ -31,11 +31,11 @@ class VCInternalState:
 
 
 class VisualComparisonApp(customtkinter.CTk):
-    def __init__(self, root=None, src_folder_name=None):
+    def __init__(self, root=None, preview_folder=None):
         super().__init__()
 
         self.root = root
-        self.src_folder_name = src_folder_name
+        self.preview_folder = preview_folder
 
         # Maintains the selected method & function for the app
         self.app_status = VCInternalState()
@@ -104,13 +104,13 @@ class VisualComparisonApp(customtkinter.CTk):
         self.bind_methods_to_keys()
 
     def load_content(self):
-        popup = RootSelectionPopup(self.root, self.src_folder_name)
+        popup = RootSelectionPopup(self.root, self.preview_folder)
         cancelled, ret_vals = popup.get_input()
         if cancelled:
             return False
 
         root_folder, preview_folder = ret_vals
-        content_handler = ContentManager(root=root_folder, src_folder_name=preview_folder)
+        content_handler = ContentManager(root=root_folder, preview_folder=preview_folder)
 
         if len(content_handler.methods) <= 1:
             msg_popup = MessageBoxPopup("Root folder must contain more than 1 sub folder")
@@ -123,7 +123,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
         self.content_handler = content_handler
         self.root = root_folder
-        self.src_folder_name = preview_folder
+        self.preview_folder = preview_folder
         return True
 
     def on_change_dir(self):

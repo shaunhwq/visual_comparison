@@ -90,13 +90,13 @@ Requirements
 
 ### <u> Running the program </u>
 ```
-usage: run.py [-h] [--root ROOT] [--source_folder SOURCE_FOLDER]
+usage: run.py [-h] [--root ROOT] [--preview_folder PREVIEW_FOLDER]
 
 optional arguments:
   -h, --help            show this help message and exit
   --root ROOT           Path to root directory
-  --source_folder SOURCE_FOLDER
-                        Name of source folder
+  --preview_folder PREVIEW_FOLDER
+                        Folder to preview
 ```
 
 ## More Info
