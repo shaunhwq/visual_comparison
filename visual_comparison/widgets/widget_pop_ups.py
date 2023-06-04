@@ -1,8 +1,10 @@
+import os
 import time
 from typing import List, Any
 
 import tkinter.ttk as ttk
 import tkinter
+from tkinter import filedialog
 import customtkinter
 
 from ..utils import validate_number_str, shift_widget_to_root_center
@@ -13,7 +15,8 @@ __all__ = [
     "FilterRangePopup",
     "DataSelectionPopup",
     "MessageBoxPopup",
-    "GetNumberBetweenRangePopup"
+    "GetNumberBetweenRangePopup",
+    "RootSelectionPopup",
 ]
 
 
@@ -429,6 +432,102 @@ class GetNumberBetweenRangePopup(customtkinter.CTkToplevel):
         self.return_value = value
         self.cancelled = False
         self.destroy()
+
+    def get_input(self):
+        self.master.wait_window(self)
+        return self.cancelled, self.return_value
+
+
+class RootSelectionPopup(customtkinter.CTkToplevel):
+    def __init__(self, root=None, selected_folder=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.columnconfigure(0, weight=1)
+        self.title("Select root folder and folder for preview")
+
+        tree_frame = customtkinter.CTkFrame(self, width=500)
+        # Create Tree for display
+        tree = ttk.Treeview(tree_frame, columns=["column"], show='headings')
+        tree.heading("column", text="Click To Select Root Folder", command=self.on_select_clicked)
+        tree.column("column", width=500)
+        tree.columnconfigure(0, weight=1)
+        tree.grid(row=0, column=0, sticky="nsew")
+        self.display_tree = tree
+
+        # Create scrollbar
+        vertical_scroll = customtkinter.CTkScrollbar(tree_frame, orientation="vertical", command=tree.yview)
+        vertical_scroll.grid(row=0, column=1, sticky="ns")
+        tree.configure(yscrollcommand=vertical_scroll.set)
+        tree_frame.grid(row=0, column=0, sticky="nsew")
+
+        tree_frame.columnconfigure(0, weight=1)
+
+        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm)
+        confirm_button.grid(row=1, column=0, padx=20, pady=20)
+
+        self.cancelled = True
+        self.return_value = []
+
+        self.grab_set()  # make other windows not clickable
+        self.update_idletasks()
+        shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
+        if root is not None and selected_folder is not None:
+            self.on_select_clicked(root, selected_folder)
+
+    def on_select_clicked(self, desired_dir=None, selected_folder=None):
+        # Get desired directory
+        if desired_dir is None:
+            current_folder = self.display_tree.heading("column")['text']
+            ask_dir_args = dict(initialdir=current_folder) if os.path.isdir(current_folder) else {}
+            desired_dir = filedialog.askdirectory(**ask_dir_args)
+        # Check desired sub dir
+        if desired_dir == "":
+            return
+        if not os.path.isdir(desired_dir):
+            self.create_popup("Folder must be a directory")
+            return
+
+        # Get Sub folders
+        sub_folders = [folder for folder in os.listdir(desired_dir) if os.path.isdir(os.path.join(desired_dir, folder))]
+        # Check sub folders
+        if len(sub_folders) == 0:
+            self.create_popup("No sub folders found. Search again")
+            return
+
+        # Set display to match selection
+        self.display_tree.heading("column", text=desired_dir)
+        for child in self.display_tree.get_children():
+            self.display_tree.delete(child)
+        for folder in sub_folders:
+            self.display_tree.insert("", tkinter.END, values=[folder])
+            if selected_folder == folder:
+                self.display_tree.set(self.display_tree.get_children()[-1])
+
+    def on_confirm(self):
+        root_folder = self.display_tree.heading("column")['text']
+        selected_child = self.display_tree.selection()
+
+        # Check selected options
+        if len(selected_child) == 0:
+            self.create_popup("Please select a folder to preview")
+            return
+        if len(selected_child) > 1:
+            self.create_popup("Can only preview a single folder")
+            return
+        if not os.path.isdir(root_folder):
+            self.create_popup("Invalid folder selection try again")
+            return
+
+        selected_folder_name = self.display_tree.item(selected_child[0])["values"][0]
+        self.cancelled = False
+        self.return_value = [root_folder, selected_folder_name]
+        self.destroy()
+
+    def create_popup(self, text):
+        self.grab_release()
+        msg_popup = MessageBoxPopup(text)
+        msg_popup.wait()
+        self.grab_set()
 
     def get_input(self):
         self.master.wait_window(self)

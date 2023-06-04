@@ -37,10 +37,12 @@ class ControlButtonsWidget(customtkinter.CTkFrame):
 
         # For saving and copying files
         frame_02 = customtkinter.CTkFrame(master=self)
-        button_save = customtkinter.CTkButton(master=frame_02, width=75, height=25, command=callbacks["on_save_image"], text="Save")
+        button_save = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_save_image"], text="Save")
         button_save.grid(row=0, column=0, padx=5)
-        button_copy = customtkinter.CTkButton(master=frame_02, width=75, height=25, command=callbacks["on_copy_image"], text="Copy")
+        button_copy = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_copy_image"], text="Copy")
         button_copy.grid(row=0, column=1, padx=5)
+        button_change_dir = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_change_dir"], text="Change Dir")
+        button_change_dir.grid(row=0, column=2, padx=5)
         frame_02.grid(row=0, column=2, padx=10)
 
         # For changing to 'Specific' mode

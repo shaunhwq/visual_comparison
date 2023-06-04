@@ -10,7 +10,7 @@ A tool for comparing images & videos, to aid research in image/video enhancement
 - Zoom to see fine details or enhancement
 
 Simply generate your enhanced images/videos, store it together with outputs from other methods and source images. Then,
-run the application, passing the path to the containing folder as an input.
+run the application, and select the root folder and preview folder using the GUI.
 
 ## Problem
 
@@ -90,7 +90,7 @@ Requirements
 
 ### <u> Running the program </u>
 ```
-usage: run.py [-h] --root ROOT [--source_folder SOURCE_FOLDER]
+usage: run.py [-h] [--root ROOT] [--source_folder SOURCE_FOLDER]
 
 optional arguments:
   -h, --help            show this help message and exit

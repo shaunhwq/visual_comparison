@@ -11,7 +11,7 @@ import customtkinter
 
 from .managers import ZoomManager, ContentManager
 from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
-from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup
+from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup
 from .enums import VCModes, VCState
 from .utils import image_utils
 
@@ -31,26 +31,19 @@ class VCInternalState:
 
 
 class VisualComparisonApp(customtkinter.CTk):
-    def __init__(self, root, src_folder_name="source"):
+    def __init__(self, root=None, src_folder_name=None):
         super().__init__()
-        self.root = root
 
-        if not os.path.isdir(os.path.join(root, src_folder_name)):
-            new_folder_name = os.listdir(root)[0]
-            message = f"Unable to find folder '{src_folder_name}'. Use first folder '{new_folder_name}' for preview"
-            src_folder_name = new_folder_name
-            popup = MessageBoxPopup(message)
-            popup.wait()
+        self.root = root
         self.src_folder_name = src_folder_name
 
         # Maintains the selected method & function for the app
         self.app_status = VCInternalState()
-        self.content_handler = ContentManager(root, src_folder_name)
+        self.content_handler = None
         self.images = None
 
         # Create Preview Window
         self.preview_widget = PreviewWidget(master=self)
-        self.preview_widget.populate_preview_window(self.content_handler.thumbnails, self.on_specify_index)
         self.preview_widget.grid(row=0, column=0)
 
         # Create Control Buttons
@@ -64,9 +57,9 @@ class VisualComparisonApp(customtkinter.CTk):
             on_next_method=self.on_next_method,
             on_save_image=self.on_save_image,
             on_copy_image=self.on_copy_image,
+            on_change_dir=self.on_change_dir,
         )
         self.cb_widget = ControlButtonsWidget(master=self, callbacks=cb_callbacks)
-        self.cb_widget.populate_methods_button(self.content_handler.current_methods, self.on_change_mode)
         self.cb_widget.populate_mode_button(VCModes, self.on_change_mode)
         self.cb_widget.set_mode(VCModes.Compare)
         self.cb_widget.grid(row=1, column=0)
@@ -82,6 +75,7 @@ class VisualComparisonApp(customtkinter.CTk):
         # Create Display Window
         self.display_handler = DisplayWidget(master=self)
         self.display_handler.grid(row=3, column=0)
+        self.zoom_manager = ZoomManager(self.display_handler)
 
         self.bind("a", self.on_prev_file)
         self.bind("d", self.on_next_file)
@@ -99,9 +93,58 @@ class VisualComparisonApp(customtkinter.CTk):
         bind_save_cmd = "<M1-s>" if platform.system() == "Darwin" else "<Control-s>"
         self.bind(bind_save_cmd, self.on_save_image)
 
+        # Get Data
+        ret = False
+        while not ret:
+            ret = self.load_content()
+
+        self.preview_widget.populate_preview_window(self.content_handler.thumbnails, self.on_specify_index)
+        self.cb_widget.populate_methods_button(self.content_handler.current_methods, self.on_change_mode)
+
         self.bind_methods_to_keys()
 
-        self.zoom_manager = ZoomManager(self.display_handler)
+    def load_content(self):
+        popup = RootSelectionPopup(self.root, self.src_folder_name)
+        cancelled, ret_vals = popup.get_input()
+        if cancelled:
+            return False
+
+        root_folder, preview_folder = ret_vals
+        content_handler = ContentManager(root=root_folder, src_folder_name=preview_folder)
+
+        if len(content_handler.methods) <= 1:
+            msg_popup = MessageBoxPopup("Root folder must contain more than 1 sub folder")
+            msg_popup.wait()
+            return False
+        if len(content_handler.files) == 0:
+            msg_popup = MessageBoxPopup("There are no common files in all sub folders")
+            msg_popup.wait()
+            return False
+
+        self.content_handler = content_handler
+        self.root = root_folder
+        self.src_folder_name = preview_folder
+        return True
+
+    def on_change_dir(self):
+        ret = self.load_content()
+        if not ret:
+            return
+
+        # Setting app states and files
+        self.cb_widget.set_mode(VCModes.Compare)
+        self.cb_widget.show_method_button(show=False)
+        self.app_status.reset()
+
+        # Destroy and re-create preview widget TODO: Try reuse
+        self.preview_widget.destroy()
+        self.preview_widget = PreviewWidget(master=self)
+        self.preview_widget.grid(row=0, column=0)
+        self.preview_widget.populate_preview_window(self.content_handler.thumbnails, self.on_specify_index)
+        self.on_specify_index(0)
+
+        self.cb_widget.populate_methods_button(self.content_handler.current_methods, self.on_change_mode)
+        self.bind_methods_to_keys()
 
     def on_prev_method(self, event=None):
         methods = self.content_handler.current_methods

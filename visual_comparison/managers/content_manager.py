@@ -36,6 +36,9 @@ class ContentManager:
         self.get_data()
 
     def get_data(self):
+        if not (len(self.methods) > 0 and len(self.files) > 0):
+            return
+
         # Load images for preview window. Multi thread for faster reading.
         file_paths = file_utils.complete_paths(self.root, self.src_folder_name, self.files)
 

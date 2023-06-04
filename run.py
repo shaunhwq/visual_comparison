@@ -10,8 +10,8 @@ if __name__ == "__main__":
     customtkinter.set_default_color_theme("dark-blue")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", type=str, help="Path to root directory", required=True)
-    parser.add_argument("--source_folder", type=str, help="Name of source folder", default="source")
+    parser.add_argument("--root", type=str, help="Path to root directory", default=None)
+    parser.add_argument("--source_folder", type=str, help="Name of source folder", default=None)
     opt = parser.parse_args()
 
     app = VisualComparisonApp(root=opt.root, src_folder_name=opt.source_folder)
