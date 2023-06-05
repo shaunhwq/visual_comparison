@@ -471,7 +471,9 @@ class RootSelectionPopup(customtkinter.CTkToplevel):
         self.update_idletasks()
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
-        if root is not None and selected_folder is not None:
+        if selected_folder is not None and root is None:
+            self.create_popup(f"Specified folder '{selected_folder}' without specifying root. Ignoring...")
+        if root is not None:
             self.on_select_clicked(root, selected_folder)
 
     def on_select_clicked(self, desired_dir=None, selected_folder=None):
@@ -484,7 +486,7 @@ class RootSelectionPopup(customtkinter.CTkToplevel):
         if desired_dir == "":
             return
         if not os.path.isdir(desired_dir):
-            self.create_popup("Folder must be a directory")
+            self.create_popup(f"Path must point to root dir: '{desired_dir}'")
             return
 
         # Get Sub folders
@@ -501,7 +503,10 @@ class RootSelectionPopup(customtkinter.CTkToplevel):
         for folder in sub_folders:
             self.display_tree.insert("", tkinter.END, values=[folder])
             if selected_folder == folder:
-                self.display_tree.set(self.display_tree.get_children()[-1])
+                self.display_tree.selection_add(self.display_tree.get_children()[-1])
+
+        if selected_folder is None:
+            self.display_tree.selection_add(self.display_tree.get_children()[0])
 
     def on_confirm(self):
         root_folder = self.display_tree.heading("column")['text']
