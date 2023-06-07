@@ -67,6 +67,7 @@ Your files should be stored in the following manner:
 
 ```
 root
+├── file1.jpg  # Files will be excluded
 ├── method_1  # Could be name of algorithm or outputs from epoch
     ├── file1
     ├── file2
@@ -87,6 +88,7 @@ Requirements
 - Each file must have the same name as the source file.
 - Files which have the same name across <b><u>ALL</u></b> subdirectories will be retrieved.
 - Images & videos should all have the same size (since we need to overlay/crop and join them)
+- Files in root folder will be excluded
 
 ### <u> Running the program </u>
 ```

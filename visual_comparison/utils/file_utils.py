@@ -18,7 +18,19 @@ def get_folders(root, preview_folder) -> List[str]:
     :return: List of folder names, with preview folder as first item
     """
     # Contains method name (folder name)
-    folders = [folder for folder in os.listdir(root) if folder[0] != "."]
+    folders = []
+    for item in os.listdir(root):  # Item can be files/folders
+        # Ignore hidden files/folders
+        if item[0] == ".":
+            continue
+
+        # Exclude if item is not a folder
+        item_path = os.path.join(root, item)
+        if not os.path.isdir(item_path):
+            continue
+
+        folders.append(item)
+
     if preview_folder in folders:
         folders.insert(0, folders.pop(folders.index(preview_folder)))
     return folders
