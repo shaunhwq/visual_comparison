@@ -43,10 +43,10 @@ Many files or methods to compare?
 
 ### <u> Installation </u>
 
-Create a virtual environment with Python 3.8. Then,
+Create a virtual environment with Python 3.8.10 Then,
 
 ```
-pip3 install customtkinter opencv-python pillow tqdm
+pip3 install -r requirements.txt
 ```
 
 Next, install the necessary package for the copy image to clipboard feature
