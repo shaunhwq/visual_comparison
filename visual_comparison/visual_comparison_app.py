@@ -1,4 +1,5 @@
 import os
+import time
 import tkinter
 from tkinter import filedialog
 from typing import Optional
@@ -22,6 +23,7 @@ class VCInternalState:
     STATE: VCState = VCState.UPDATE_FILE
     METHOD: Optional[str] = None
     VIDEO_PAUSED: bool = False
+    VIDEO_PLAYBACK_RATE: float = 1.0
 
     def reset(self):
         self.MODE = VCModes.Compare
@@ -69,6 +71,7 @@ class VisualComparisonApp(customtkinter.CTk):
             on_set_video_position=self.on_set_video_position,
             on_pause=self.on_pause,
             on_specify_frame_no=self.on_specify_frame_no,
+            on_change_playback_rate=self.on_change_playback_rate,
         )
         self.video_controls = VideoControlsWidget(master=self, callbacks=vc_callbacks)
 
@@ -125,6 +128,14 @@ class VisualComparisonApp(customtkinter.CTk):
         self.root = root_folder
         self.preview_folder = preview_folder
         return True
+
+    def on_change_playback_rate(self, new_rate):
+        if new_rate == "Max":
+            self.app_status.VIDEO_PLAYBACK_RATE = 100.0
+        else:
+            # Strip 'x' at the back e.g. 1.5x, 1x, 2x -> 1.5, 1, 2
+            new_rate = new_rate[:-1]
+            self.app_status.VIDEO_PLAYBACK_RATE = float(new_rate)
 
     def on_change_dir(self):
         ret = self.load_content()
@@ -339,6 +350,7 @@ class VisualComparisonApp(customtkinter.CTk):
             image_utils.image_to_clipboard(self.display_image)
 
     def display(self):
+        start_time = time.time()
         # Read the files when changing method or files.
         if self.app_status.STATE == VCState.UPDATE_FILE or self.app_status.STATE == VCState.UPDATE_METHOD:
             self.title(self.content_handler.get_title())
@@ -415,7 +427,16 @@ class VisualComparisonApp(customtkinter.CTk):
 
         self.display_handler.update_image(display_image)
 
+        end_time = time.time()
+        time_elapsed_s = end_time - start_time
+
+        # Find the right time to sleep such that we achieve same fps as video if has video, else 30 fps.
+        target_fps = self.content_handler.get_video_position()[2] * self.app_status.VIDEO_PLAYBACK_RATE if self.content_handler.has_video() else 60.0
+        target_period_s = 1.0 / target_fps
+        time_to_sleep_ms = (target_period_s - time_elapsed_s) * 1000
+        time_to_sleep_ms = max(1, int(round(time_to_sleep_ms, 0)))
+
         # Refresh slower if in background to minimize cpu usage
         out_of_focus = self.focus_get() is None
-        refresh_after = 500 if out_of_focus else 10
+        refresh_after = 500 if out_of_focus else time_to_sleep_ms
         self.after(refresh_after, self.display)
