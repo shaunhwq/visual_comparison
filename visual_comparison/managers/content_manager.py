@@ -136,7 +136,7 @@ class ContentManager:
         first_cap = self.content_loaders[self.video_indices[0]]
         current_position = int(first_cap.get(cv2.CAP_PROP_POS_FRAMES))
 
-        is_in_future = current_position < frame_no
+        is_in_future = current_position <= frame_no
         number_frames = frame_no - current_position if is_in_future else frame_no
 
         # TODO: Might not be best solution, need to check if we can use threads to speed up this IO task
