@@ -9,8 +9,9 @@ import platform
 import cv2
 import numpy as np
 import customtkinter
+from tqdm import tqdm
 
-from .managers import ZoomManager, ContentManager
+from .managers import ZoomManager, ContentManager, VideoWriter
 from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
 from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup
 from .enums import VCModes, VCState
@@ -41,7 +42,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
         # Maintains the selected method & function for the app
         self.app_status = VCInternalState()
-        self.content_handler = None
+        self.content_handler: Optional[ContentManager] = None
         self.images = None
 
         # Create Preview Window
@@ -336,9 +337,49 @@ class VisualComparisonApp(customtkinter.CTk):
         :param event: Tkinter event, passed by self.bind.
         :return: None
         """
-        if hasattr(self, "display_image"):
+        if self.content_handler.has_video():
+            self.app_status.VIDEO_PAUSED = True
+
+            name = os.path.splitext(self.content_handler.current_files[self.content_handler.current_index])[0]
+            desired_path = filedialog.asksaveasfile(mode='w', initialfile=name, defaultextension=".mp4").name
+            file_extension = os.path.splitext(desired_path)[-1]
+            if file_extension != ".mp4":
+                msg_popup = MessageBoxPopup(f"Unsupported file extension: {file_extension}")
+                msg_popup.wait()
+                return
+
+            # Get video information
+            video_position, video_length, video_fps = self.content_handler.get_video_position()
+            caps = self.content_handler.content_loaders
+            current_methods = self.content_handler.current_methods
+            width = int(caps[0].get(cv2.CAP_PROP_FRAME_WIDTH) * len(caps))
+            height = int(caps[0].get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+            # Reset video and export
+            self.content_handler.set_video_position(0)
+            writer = VideoWriter(output_path=desired_path, width=width, height=height, fps=video_fps)
+            pbar = tqdm(total=video_length, desc="Exporting video...")
+            while True:
+                ret, images = self.content_handler.read_frames()
+                if not ret:
+                    break
+                title_positions = [image_utils.TextPosition.TOP_LEFT] * len(current_methods)
+                # Puts text in place
+                for image, title, title_pos in zip(images, current_methods, title_positions):
+                    image_utils.put_text(image, title, title_pos)
+                writer.write_image(np.hstack(images))
+                pbar.update(1)
+            writer.release()
+
+            # Reset video back to original state
+            self.content_handler.set_video_position(video_position)
+
+        elif hasattr(self, "display_image"):
             desired_path = filedialog.asksaveasfile(mode='w', initialfile="new_file", defaultextension=".png").name
             cv2.imwrite(desired_path, self.display_image)
+        else:
+            msg_popup = MessageBoxPopup("Error occured when saving.")
+            msg_popup.wait()
 
     def on_copy_image(self, event: Optional[tkinter.Event] = None) -> None:
         """
