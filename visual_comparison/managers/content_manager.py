@@ -155,10 +155,6 @@ class ContentManager:
 
     def read_frames(self):
         outputs = [cap.read() for cap in self.content_loaders]
-        # todo: assess performance for this
-        # for cap in self.content_loaders:
-        #     cap.get()
-        # outputs = [cap.retrieve() for cap in self.content_loaders]
         rets = [out[0] for out in outputs]
         frames = [out[1] for out in outputs]
         return all(rets), frames
