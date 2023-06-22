@@ -472,7 +472,7 @@ class VisualComparisonApp(customtkinter.CTk):
         end_time = time.time()
         time_elapsed_s = end_time - start_time
 
-        # Find the right time to sleep such that we achieve same fps as video if has video, else 30 fps.
+        # Find the right time to sleep such that we achieve same fps as video if has video, else 60 fps.
         target_fps = self.content_handler.get_video_position()[2] * self.app_status.VIDEO_PLAYBACK_RATE if self.content_handler.has_video() else 60.0
         target_period_s = 1.0 / target_fps
         time_to_sleep_ms = (target_period_s - time_elapsed_s) * 1000
