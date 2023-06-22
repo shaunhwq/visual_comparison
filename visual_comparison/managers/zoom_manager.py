@@ -1,3 +1,4 @@
+import platform
 from typing import Tuple, List, Optional
 
 import tkinter
@@ -16,8 +17,9 @@ class ZoomManager:
         :param display_widget: For binding keys to the widget and getting mouse position
         """
         # Key binding
+        bind_right_mouse_bn_cmd = "<Button-2>" if platform.system() == "Darwin" else "<Button-3>"
         display_widget.image_label.bind("<Button-1>", self.on_l_mouse_click)
-        display_widget.image_label.bind("<Button-2>", self.reset)
+        display_widget.image_label.bind(bind_right_mouse_bn_cmd, self.reset)
         display_widget.image_label.bind("<Motion>", self.on_mouse_move)
         self.display_widget = display_widget
 
