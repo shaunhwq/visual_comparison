@@ -373,6 +373,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
             # Reset video back to original state
             self.content_handler.set_video_position(video_position)
+            self.focus_get()
 
         elif hasattr(self, "display_image"):
             desired_path = filedialog.asksaveasfile(mode='w', initialfile="new_file", defaultextension=".png").name
