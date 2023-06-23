@@ -40,6 +40,8 @@ class VideoControlsWidget(customtkinter.CTkFrame):
         self.last_called = []
 
     def get_playback_fps(self):
+        if len(self.last_called) == 0:
+            return 60.0
         time_diff_s = self.last_called[-1] - self.last_called[0]
         playback_fps = -1 if time_diff_s == 0 else len(self.last_called) / time_diff_s
         return playback_fps

@@ -469,16 +469,26 @@ class VisualComparisonApp(customtkinter.CTk):
 
         self.display_handler.update_image(display_image)
 
-        end_time = time.time()
-        time_elapsed_s = end_time - start_time
-
-        # Find the right time to sleep such that we achieve same fps as video if has video, else 60 fps.
-        target_fps = self.content_handler.get_video_position()[2] * self.app_status.VIDEO_PLAYBACK_RATE if self.content_handler.has_video() else 60.0
-        target_period_s = 1.0 / target_fps
-        time_to_sleep_ms = (target_period_s - time_elapsed_s) * 1000
-        time_to_sleep_ms = max(1, int(round(time_to_sleep_ms, 0)))
-
         # Refresh slower if in background to minimize cpu usage
         out_of_focus = self.focus_get() is None
-        refresh_after = 500 if out_of_focus else time_to_sleep_ms
+        refresh_after = 500 if out_of_focus else self.get_sleep_time_ms(start_time)
         self.after(refresh_after, self.display)
+
+    def get_sleep_time_ms(self, start_time):
+        # Calculate T = 1/f, time budget for video playback
+        target_fps = 60.0
+        if self.content_handler.has_video():
+            target_fps = self.content_handler.get_video_position()[2] * self.app_status.VIDEO_PLAYBACK_RATE
+        target_period_s = 1.0 / target_fps
+
+        # Find offset time
+        actual_fps = self.video_controls.get_playback_fps()
+        offset_period_s = (1 / actual_fps) - (1 / target_fps)
+        offset_period_s = np.clip(offset_period_s, -0.01, 0.01)
+
+        # Find time to sleep such that program achieves desired fps
+        time_elapsed_s = time.time() - start_time
+        time_to_sleep_ms = (target_period_s - time_elapsed_s - offset_period_s) * 1000
+        time_to_sleep_ms = max(1, int(round(time_to_sleep_ms, 0)))
+
+        return time_to_sleep_ms
