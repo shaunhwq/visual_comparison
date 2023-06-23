@@ -393,6 +393,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def display(self):
         start_time = time.time()
+
         # Read the files when changing method or files.
         if self.app_status.STATE == VCState.UPDATE_FILE or self.app_status.STATE == VCState.UPDATE_METHOD:
             self.title(self.content_handler.get_title())
@@ -403,29 +404,29 @@ class VisualComparisonApp(customtkinter.CTk):
             self.video_controls.pause(False)
             self.zoom_manager.reset()
 
+        # Show or hide video controller
         if not self.app_status.VIDEO_PAUSED:
-            # Show or hide video controller
             if self.content_handler.has_video():
                 if len(self.video_controls.grid_info()) == 0:
                     self.video_controls.grid(row=2, column=0, pady=2)
             else:
                 self.video_controls.grid_forget()
 
-            # Set video controller
-            if self.content_handler.has_video():
-                self.video_controls.update_widget(*self.content_handler.get_video_position())
+        # Set video controller
+        if self.content_handler.has_video() and not self.app_status.VIDEO_PAUSED:
+            self.video_controls.update_widget(*self.content_handler.get_video_position())
 
-            # Read images/videos
+        # Read images/videos
+        if self.app_status.VIDEO_PAUSED:
+            images = self.images
+        else:
             ret, images = self.content_handler.read_frames()
-
             if not ret:
                 self.app_status.VIDEO_PAUSED = True
                 self.video_controls.pause(True)
                 images = self.images
             else:
                 self.images = images
-        else:
-            images = self.images
 
         # For visualization
         images = [img.copy() for img in images]
