@@ -22,8 +22,10 @@ __all__ = [
 
 class TextPosition(enum.Enum):
     TOP_LEFT = enum.auto()
+    TOP_CENTER = enum.auto()
     TOP_RIGHT = enum.auto()
     BTM_LEFT = enum.auto()
+    BTM_CENTER = enum.auto()
     BTM_RIGHT = enum.auto()
 
 
@@ -75,10 +77,14 @@ def put_text(
 
     if position == TextPosition.TOP_LEFT:
         text_position = (buffer, buffer + text_height)
+    elif position == TextPosition.TOP_CENTER:
+        text_position = (img_width // 2 - text_width // 2, buffer + text_height)
     elif position == TextPosition.TOP_RIGHT:
         text_position = (img_width - text_width - buffer, buffer + text_height)
     elif position == TextPosition.BTM_LEFT:
         text_position = (buffer, img_height - text_height - buffer)
+    elif position == TextPosition.BTM_CENTER:
+        text_position = (img_width // 2 - text_width // 2, img_height - text_height - buffer)
     else:
         text_position = (img_width - text_width - buffer, img_height - text_height - buffer)
 
