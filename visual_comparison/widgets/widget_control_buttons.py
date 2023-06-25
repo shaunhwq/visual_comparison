@@ -35,10 +35,11 @@ class ControlButtonsWidget(customtkinter.CTkFrame):
         self.modes_button.pack()
         frame_01.grid(row=0, column=1, padx=10)
 
-        # For saving and copying files
+        # For exporting and copying files
         frame_02 = customtkinter.CTkFrame(master=self)
-        button_save = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_save_image"], text="Save")
-        button_save.grid(row=0, column=0, padx=5)
+        self.button_export = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_export"], text="Export")
+        self.button_export.grid(row=0, column=0, padx=5)
+        self.default_button_color = self.button_export.cget("fg_color")
         button_copy = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_copy_image"], text="Copy")
         button_copy.grid(row=0, column=1, padx=5)
         button_change_dir = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_change_dir"], text="Change Dir")
@@ -71,4 +72,14 @@ class ControlButtonsWidget(customtkinter.CTkFrame):
     def set_mode(self, mode_enum):
         self.modes_button.set(mode_enum.name)
 
+    def toggle_export_button(self):
+        text = self.button_export.cget("text")
 
+        if text == "Export":
+            text, fg_color = "Stop", "red"
+        elif text == "Stop":
+            text, fg_color = "Export", self.default_button_color
+        else:
+            raise NotImplementedError(f"Unknown export button text: {text}")
+
+        self.button_export.configure(text=text, fg_color=fg_color)

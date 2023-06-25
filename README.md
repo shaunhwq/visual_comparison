@@ -8,6 +8,7 @@ A tool for comparing images & videos, to aid research in image/video enhancement
 - 3 different comparison modes for more effective comparison
 - Preview and filter window to quickly search, filter and skip to desired images
 - Zoom to see fine details or enhancement
+- Video exporting functionality to share comparison videos
 
 Simply generate your enhanced images/videos, store it together with outputs from other methods and source images. Then,
 run the application, and select the root folder and preview folder using the GUI.

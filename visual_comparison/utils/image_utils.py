@@ -72,7 +72,7 @@ def put_text(
     }.get(font)
     # 0.4 = Scale needed for fitting 40 hershey complex characters in 360 pixel width img
     num_chars_scalar = 0.40 / (max(len(text), 40) / 40.0)
-    width_scale = (img.shape[1] / 360.0)
+    width_scale = min((img.shape[1] / 360.0), 2)  # Cap if not too big
     actual_scale = scale * num_chars_scalar * width_scale * font_scale
 
     (text_width, text_height), _ = cv2.getTextSize(text, font, actual_scale, thickness)

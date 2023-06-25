@@ -17,6 +17,9 @@ __all__ = [
     "MessageBoxPopup",
     "GetNumberBetweenRangePopup",
     "RootSelectionPopup",
+    "ExportVideoPopup",
+    "ExportSelectionPopup",
+    "ProgressBarPopup"
 ]
 
 
@@ -537,3 +540,165 @@ class RootSelectionPopup(customtkinter.CTkToplevel):
     def get_input(self):
         self.master.wait_window(self)
         return self.cancelled, self.return_value
+
+
+class ExportVideoPopup(customtkinter.CTkToplevel):
+    def __init__(self, file_name, img_width, img_height, video_fps=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.columnconfigure(0, weight=1)
+        self.title("File Export Configuration")
+
+        max_length = max(len(file_name), len(os.getcwd()))
+        text_width = int(400./55 * max_length) + 25  # Number of pixels for width
+
+        folder_label = customtkinter.CTkLabel(self, width=80, height=25, text="Folder:", anchor="w")
+        folder_label.grid(row=0, column=0, pady=(20, 0), padx=10)
+        self.folder_button = customtkinter.CTkButton(self, width=text_width, height=25, text=os.getcwd(), command=self.on_change_dir)
+        self.folder_button.grid(row=0, column=1, pady=(20, 0), padx=10)
+
+        file_label = customtkinter.CTkLabel(self, width=80, height=25, text="File name:", anchor="w")
+        file_label.grid(row=1, column=0, padx=10)
+        self.file_name_entry = customtkinter.CTkEntry(self, width=text_width, height=25)
+        self.file_name_entry.insert(0, file_name)
+        self.file_name_entry.grid(row=1, column=1, padx=10)
+
+        dimensions_label = customtkinter.CTkLabel(self, width=80, height=25, text="Dimensions:", anchor="w")
+        dimensions_label.grid(row=2, column=0, padx=10)
+        dimensions_text = customtkinter.CTkEntry(self, width=text_width, height=25)
+        dimensions_text.insert(0, f"{img_width}(width) x {img_height}(height)")
+        dimensions_text.grid(row=2, column=1, padx=10)
+        dimensions_text.configure(state="disabled")
+
+        fps_label = customtkinter.CTkLabel(self, width=80, height=25, text="FPS:", anchor="w")
+        fps_label.grid(row=3, column=0, padx=10)
+        self.fps_entry = customtkinter.CTkEntry(self, width=text_width, height=25)
+        self.fps_entry.insert(0, str(video_fps) if video_fps is not None else "Not Applicable")
+        self.fps_entry.grid(row=3, column=1, padx=10)
+
+        export_type_label = customtkinter.CTkLabel(self, width=80, height=25, text="Export Type:", anchor="w")
+        export_type_label.grid(row=4, column=0, padx=10)
+        self.export_options = customtkinter.CTkOptionMenu(self, width=text_width, height=25, values=["Fixed (Concatenated)", "Custom"], command=self.on_export_options_changed)
+        self.export_options.grid(row=4, column=1, padx=10)
+
+        other_options_label = customtkinter.CTkLabel(self, width=80, height=25, text="Other Options:", anchor="w")
+        other_options_label.grid(row=5, column=0, padx=10)
+        self.checkbox_options_frame = customtkinter.CTkFrame(self)
+        self.render_video_frames_num_checkbox = customtkinter.CTkCheckBox(self.checkbox_options_frame, text_width // 2, height=25, text="Render Video Frame Num")
+        self.render_video_frames_num_checkbox.grid(row=0, column=1)
+        self.render_playback_bar_checkbox = customtkinter.CTkCheckBox(self.checkbox_options_frame, text_width // 2, height=25, text="Render Playback Bar")
+        self.render_playback_bar_checkbox.grid(row=0, column=2)
+
+        exit_buttons_frame = customtkinter.CTkFrame(self)
+        cancel_button = customtkinter.CTkButton(exit_buttons_frame, height=25, width=50, text="Cancel", command=self.destroy)
+        cancel_button.grid(row=0, column=0)
+        confirm_button = customtkinter.CTkButton(exit_buttons_frame, height=25, width=50, text="Confirm", command=self.on_confirm)
+        confirm_button.grid(row=0, column=1)
+        exit_buttons_frame.grid(row=6, column=0, columnspan=3, pady=20)
+
+        self.cancelled = True
+        self.return_value = {}
+
+        self.grab_set()  # make other windows not clickable
+        self.update_idletasks()
+        shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
+    def on_export_options_changed(self, value):
+        if value == "Custom":
+            self.checkbox_options_frame.grid(row=5, column=1, padx=10)
+        else:
+            self.checkbox_options_frame.grid_forget()
+
+    def on_change_dir(self):
+        current_dir = self.folder_button.cget("text")
+        desired_path = filedialog.askdirectory(initialdir=current_dir)
+        if desired_path != "":
+            self.folder_button.configure(text=desired_path)
+
+    def on_confirm(self):
+        # Ensure path does not exist
+        export_path = os.path.join(self.folder_button.cget("text"), self.file_name_entry.get()) + ".mp4"
+        if os.path.exists(export_path):
+            self.grab_release()
+            msg_popup = MessageBoxPopup("Path exists, please choose another name")
+            msg_popup.wait()
+            self.grab_set()
+            return
+
+        self.cancelled = False
+        self.return_value = dict(
+            export_path=os.path.join(self.folder_button.cget("text"), self.file_name_entry.get()) + ".mp4",
+            export_type=self.export_options.get(),
+            export_fps=float(self.fps_entry.get()),
+        )
+
+        # If exporting as custom, add options
+        if self.export_options.get() == "Custom":
+            self.return_value["export_options"] = {
+                "render_video_frames_num": self.render_video_frames_num_checkbox.get(),
+                "render_playback_bar": self.render_playback_bar_checkbox.get(),
+            }
+
+        self.destroy()
+
+    def get_input(self):
+        self.master.wait_window(self)
+        return self.cancelled, self.return_value
+
+
+class ExportSelectionPopup(customtkinter.CTkToplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.title("Export To")
+
+        self.options = customtkinter.CTkSegmentedButton(self, values=["Image", "Video"])
+        self.options.grid(row=0, column=0, columnspan=2, padx=20, pady=20)
+        self.options.set("Image")
+
+        cancel_button = customtkinter.CTkButton(self, height=25, width=50, text="Cancel", command=self.destroy)
+        cancel_button.grid(row=1, column=0, padx=20, pady=(0, 20))
+        confirm_button = customtkinter.CTkButton(self, height=25, width=50, text="Confirm", command=self.on_confirm)
+        confirm_button.grid(row=1, column=1, padx=(0, 20), pady=(0, 20))
+
+        self.cancelled = True
+        self.return_value = None
+
+        self.grab_set()  # make other windows not clickable
+        self.update_idletasks()
+        shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
+    def on_confirm(self):
+        self.cancelled = False
+        self.return_value = self.options.get()
+        self.destroy()
+
+    def get_input(self):
+        self.master.wait_window(self)
+        return self.cancelled, self.return_value
+
+
+class ProgressBarPopup(customtkinter.CTkToplevel):
+    def __init__(self, desc, total, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.title("Progress Bar")
+        self.total = total
+        self.start_time = time.time()
+        self.count = 0
+
+        desc_label = customtkinter.CTkLabel(self, text=desc)
+        desc_label.grid(row=0, column=0)
+        self.time_left_label = customtkinter.CTkLabel(self, text="")
+        self.time_left_label.grid(row=1, column=0)
+        self.progress_bar = customtkinter.CTkProgressBar(self, width=200)
+        self.progress_bar.grid(row=2, column=0)
+
+        self.grab_set()  # make other windows not clickable
+        self.update_idletasks()
+        shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
+    def update_widget(self, n):
+        self.count += n
+        time_elapsed_s = time.time() - self.start_time
+        rate = self.count / time_elapsed_s
+        remaining_time_s = (self.total - self.count) / rate
+        self.time_left_label.configure(text=f"{round(remaining_time_s, 2)}s remaining")
+        self.progress_bar.set(self.count / self.total)

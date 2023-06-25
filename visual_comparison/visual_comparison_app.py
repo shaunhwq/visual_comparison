@@ -5,6 +5,7 @@ from tkinter import filedialog
 from typing import Optional
 import dataclasses
 import platform
+from threading import Thread
 
 import cv2
 import numpy as np
@@ -13,7 +14,7 @@ from tqdm import tqdm
 
 from .managers import ZoomManager, ContentManager, VideoWriter
 from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
-from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup
+from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup, ExportVideoPopup, ExportSelectionPopup, ProgressBarPopup
 from .enums import VCModes, VCState
 from .utils import image_utils
 
@@ -58,7 +59,7 @@ class VisualComparisonApp(customtkinter.CTk):
             on_prev_method=self.on_prev_method,
             on_select_methods=self.on_select_methods,
             on_next_method=self.on_next_method,
-            on_save_image=self.on_save_image,
+            on_export=self.on_export,
             on_copy_image=self.on_copy_image,
             on_change_dir=self.on_change_dir,
         )
@@ -75,6 +76,8 @@ class VisualComparisonApp(customtkinter.CTk):
             on_change_playback_rate=self.on_change_playback_rate,
         )
         self.video_controls = VideoControlsWidget(master=self, callbacks=vc_callbacks)
+        self.video_writer = None  # For exporting video (custom)
+        self.video_writer_options = {}
 
         # Create Display Window
         self.display_handler = DisplayWidget(master=self)
@@ -94,8 +97,8 @@ class VisualComparisonApp(customtkinter.CTk):
         # Bind Ctrl C or Cmd C to copy image.
         bind_copy_cmd = "<M1-c>" if platform.system() == "Darwin" else "<Control-c>"
         self.bind(bind_copy_cmd, self.on_copy_image)
-        bind_save_cmd = "<M1-s>" if platform.system() == "Darwin" else "<Control-s>"
-        self.bind(bind_save_cmd, self.on_save_image)
+        bind_export_cmd = "<M1-s>" if platform.system() == "Darwin" else "<Control-s>"
+        self.bind(bind_export_cmd, self.on_export)
 
         # Get Data
         ret = False
@@ -331,56 +334,127 @@ class VisualComparisonApp(customtkinter.CTk):
         self.app_status.METHOD = method
         self.app_status.STATE = VCState.UPDATE_MODE
 
-    def on_save_image(self, event: Optional[tkinter.Event] = None) -> None:
+    def on_export(self, event: Optional[tkinter.Event] = None) -> None:
         """
-        Opens a file dialog and saves the image to specified folder
+        Handle button event for image/video export functionality. Changes to stop button if writing custom videos.
         :param event: Tkinter event, passed by self.bind.
         :return: None
         """
-        if self.content_handler.has_video():
-            self.app_status.VIDEO_PAUSED = True
-
-            name = os.path.splitext(self.content_handler.current_files[self.content_handler.current_index])[0]
-            desired_path = filedialog.asksaveasfile(mode='w', initialfile=name, defaultextension=".mp4").name
-            file_extension = os.path.splitext(desired_path)[-1]
-            if file_extension != ".mp4":
-                msg_popup = MessageBoxPopup(f"Unsupported file extension: {file_extension}")
-                msg_popup.wait()
-                return
-
-            # Get video information
-            video_position, video_length, video_fps = self.content_handler.get_video_position()
-            caps = self.content_handler.content_loaders
-            current_methods = self.content_handler.current_methods
-            width = int(caps[0].get(cv2.CAP_PROP_FRAME_WIDTH) * len(caps))
-            height = int(caps[0].get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-            # Reset video and export
-            self.content_handler.set_video_position(0)
-            writer = VideoWriter(output_path=desired_path, width=width, height=height, fps=video_fps)
-            pbar = tqdm(total=video_length, desc="Exporting video...")
-            while True:
-                ret, images = self.content_handler.read_frames()
-                if not ret:
-                    break
-                title_positions = [image_utils.TextPosition.TOP_LEFT] * len(current_methods)
-                # Puts text in place
-                for image, title, title_pos in zip(images, current_methods, title_positions):
-                    image_utils.put_text(image, title, title_pos)
-                writer.write_image(np.hstack(images))
-                pbar.update(1)
-            writer.release()
-
-            # Reset video back to original state
-            self.content_handler.set_video_position(video_position)
-            self.focus_get()
-
-        elif hasattr(self, "display_image"):
-            desired_path = filedialog.asksaveasfile(mode='w', initialfile="new_file", defaultextension=".png").name
-            cv2.imwrite(desired_path, self.display_image)
-        else:
-            msg_popup = MessageBoxPopup("Error occured when saving.")
+        if not hasattr(self, "display_image"):
+            msg_popup = MessageBoxPopup("self.display_image does not exist")
             msg_popup.wait()
+            return
+
+        # When stop is clicked. Export Button changes to a stop button when writing to video.
+        if self.video_writer is not None:
+            self.reset_video_writer()
+            return
+
+        self.app_status.VIDEO_PAUSED = True
+
+        export_select_popup = ExportSelectionPopup()
+        cancelled, export_format = export_select_popup.get_input()
+        if cancelled:
+            return
+
+        if export_format == "Image":
+            self.export_image()
+            self.focus_get()
+            return
+        if export_format != "Video":
+            raise NotImplementedError(f"Unknown option when selecting export options: {export_format}")
+
+        height, width = self.display_image.shape[:2]
+        if self.content_handler.has_video():
+            _, _, video_fps = self.content_handler.get_video_position()
+        else:
+            video_fps = 60.0
+
+        export_video_popup = ExportVideoPopup(
+            file_name=os.path.splitext(self.content_handler.current_files[self.content_handler.current_index])[0],
+            img_width=width,
+            img_height=height,
+            video_fps=video_fps if self.content_handler.has_video() else 60.0,
+        )
+        cancelled, video_export_options = export_video_popup.get_input()
+        if cancelled:
+            print("Cancelled")
+            return
+
+        export_type = video_export_options["export_type"]
+        export_path = video_export_options["export_path"]
+        if export_type == "Fixed (Concatenated)":
+            if not self.content_handler.has_video():
+                msg_popup = MessageBoxPopup("Current file is not a video, can't export in Concatenate mode")
+                msg_popup.wait()
+                self.focus_get()
+                return
+            Thread(target=lambda: self.export_fixed_video(export_path)).start()
+        elif export_type == "Custom":
+            self.video_writer = VideoWriter(export_path, width, height, video_export_options["export_fps"])
+            self.video_writer_options = video_export_options.get("export_options", {})
+            self.cb_widget.toggle_export_button()
+        else:
+            raise NotImplementedError(f"Unknown export type: {export_type}")
+        self.focus_get()
+
+    def export_image(self):
+        file_name = os.path.splitext(self.content_handler.current_files[self.content_handler.current_index])[0]
+        dialog_result = filedialog.asksaveasfile(mode='w', initialfile=file_name, defaultextension=".png")
+        if dialog_result is None:
+            # Cancelled
+            return
+        try:
+            cv2.imwrite(dialog_result.name, self.display_image)
+        except cv2.error as e:
+            msg_popup = MessageBoxPopup(e)
+            msg_popup.wait()
+
+    def export_fixed_video(self, file_path):
+        # Check video extension
+        file_extension = os.path.splitext(file_path)[-1]
+        if file_extension != ".mp4":
+            msg_popup = MessageBoxPopup(f"Unsupported file extension: {file_extension}")
+            msg_popup.wait()
+            return
+
+        # Get video information
+        video_position, video_length, video_fps = self.content_handler.get_video_position()
+        caps = self.content_handler.content_loaders
+        current_methods = self.content_handler.current_methods
+        width = int(caps[0].get(cv2.CAP_PROP_FRAME_WIDTH) * len(caps))
+        height = int(caps[0].get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        # Reset video and export
+        self.content_handler.set_video_position(0)
+        writer = VideoWriter(output_path=file_path, width=width, height=height, fps=video_fps)
+
+        # Create progress bars
+        pbar_popup = ProgressBarPopup(total=video_length, desc="Exporting video...")
+        pbar_tqdm = tqdm(total=video_length, desc="Exporting video...")
+
+        # Write file
+        while True:
+            ret, images = self.content_handler.read_frames()
+            if not ret:
+                break
+
+            # Puts text in place
+            title_positions = [image_utils.TextPosition.TOP_LEFT] * len(current_methods)
+            for image, title, title_pos in zip(images, current_methods, title_positions):
+                image_utils.put_text(image, title, title_pos)
+
+            writer.write_image(np.hstack(images))
+
+            # Update progress bars
+            pbar_popup.update_widget(1)
+            pbar_tqdm.update(1)
+
+        writer.release()
+        pbar_popup.destroy()
+
+        # Reset video back to original state
+        self.content_handler.set_video_position(video_position)
 
     def on_copy_image(self, event: Optional[tkinter.Event] = None) -> None:
         """
@@ -468,12 +542,50 @@ class VisualComparisonApp(customtkinter.CTk):
         # For copy/save functionality
         self.display_image = display_image
 
+        # For exporting video (custom)
+        if self.video_writer is not None:
+            self.handle_custom_video_writing(display_image)
+
         self.display_handler.update_image(display_image)
 
         # Refresh slower if in background to minimize cpu usage
         out_of_focus = self.focus_get() is None
         refresh_after = 500 if out_of_focus else self.get_sleep_time_ms(start_time)
         self.after(refresh_after, self.display)
+
+    def reset_video_writer(self):
+        self.video_writer.release()
+        self.video_writer = None
+        self.video_writer_options = {}
+        self.cb_widget.toggle_export_button()
+
+    def handle_custom_video_writing(self, img_to_write):
+        # Draw Cursor
+        cv2.circle(img_to_write, self.display_handler.mouse_position, 4, (0, 0, 0), -1)
+        cv2.circle(img_to_write, self.display_handler.mouse_position, 2, (255, 255, 255), -1)
+
+        video_position, video_length, _ = self.content_handler.get_video_position()
+
+        # Write video frame on image
+        if self.content_handler.has_video() and self.video_writer_options.get("render_playback_bar", None):
+            h, w = img_to_write.shape[: 2]
+            cv2.line(img_to_write, (0, h - 2), (w, h - 2), (0, 0, 0), 5)
+            cv2.line(img_to_write, (0, h - 2), (int(w * video_position / video_length), h - 2), (255, 255, 255), 3)
+
+        # Show playback progress on video
+        if self.content_handler.has_video() and self.video_writer_options.get("render_video_frames_num", None):
+            video_position, video_length, _ = self.content_handler.get_video_position()
+            image_utils.put_text(img_to_write, str(video_position), image_utils.TextPosition.MIDDLE_LEFT, fg_color=(255, 255, 255))
+            image_utils.put_text(img_to_write, str(video_length), image_utils.TextPosition.MIDDLE_RIGHT, fg_color=(255, 255, 255))
+
+        ret = self.video_writer.write_image(img_to_write)
+        if not ret:
+            self.reset_video_writer()
+            msg_popup = MessageBoxPopup("Video writing stopped because image size has changed")
+            msg_popup.wait()
+
+        # Inform user that it is still recording
+        image_utils.put_text(img_to_write, "Recording", image_utils.TextPosition.TOP_CENTER, fg_color=(0, 0, 255))
 
     def get_sleep_time_ms(self, start_time):
         # Calculate T = 1/f, time budget for video playback
