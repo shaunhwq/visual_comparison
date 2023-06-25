@@ -479,11 +479,11 @@ class VisualComparisonApp(customtkinter.CTk):
             self.zoom_manager.reset()
 
         # Show or hide video controller
-        if not self.app_status.VIDEO_PAUSED:
-            if self.content_handler.has_video():
-                if len(self.video_controls.grid_info()) == 0:
-                    self.video_controls.grid(row=2, column=0, pady=2)
-            else:
+        if self.content_handler.has_video():
+            if len(self.video_controls.grid_info()) == 0:
+                self.video_controls.grid(row=2, column=0, pady=2)
+        else:
+            if len(self.video_controls.grid_info()) != 0:
                 self.video_controls.grid_forget()
 
         # Set video controller
