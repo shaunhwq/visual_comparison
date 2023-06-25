@@ -142,6 +142,8 @@ class VisualComparisonApp(customtkinter.CTk):
             self.app_status.VIDEO_PLAYBACK_RATE = float(new_rate)
 
     def on_change_dir(self):
+        self.on_pause(paused=True)
+
         ret = self.load_content()
         if not ret:
             return
@@ -185,6 +187,8 @@ class VisualComparisonApp(customtkinter.CTk):
             self.bind(f"<KP_{i + 1}>", lambda event: self.on_change_mode(VCModes.Specific, current_methods[int(event.keysym.split("_")[1]) - 1]))
 
     def on_select_methods(self):
+        self.on_pause(paused=True)
+
         popup = MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods)
         is_cancelled, new_methods = popup.get_input()
 
@@ -203,6 +207,8 @@ class VisualComparisonApp(customtkinter.CTk):
         self.bind_methods_to_keys()
 
     def on_filter_files(self):
+        self.on_pause(paused=True)
+
         # Prepare data for populating popup
         row = max(self.content_handler.data, key=lambda row: len(row[1]))
         text_width = int(400./55 * len(row[1])) + 25  # Number of pixels for width
@@ -236,13 +242,13 @@ class VisualComparisonApp(customtkinter.CTk):
         self.preview_widget.populate_preview_window(selected_thumbnails, self.on_specify_index)
         self.on_specify_index(0)
 
-    def on_pause(self, event=None):
-        self.app_status.VIDEO_PAUSED = not self.app_status.VIDEO_PAUSED
-        self.video_controls.pause(self.app_status.VIDEO_PAUSED)
+    def on_pause(self, event=None, paused=None):
+        new_pause_status = not self.app_status.VIDEO_PAUSED if paused is None else paused
+        self.app_status.VIDEO_PAUSED = new_pause_status
+        self.video_controls.pause(new_pause_status)
 
     def on_specify_frame_no(self):
-        self.app_status.VIDEO_PAUSED = True
-        self.video_controls.pause()
+        self.on_pause(paused=True)
 
         _, total_num_frames, _ = self.content_handler.get_video_position()
 
@@ -270,12 +276,14 @@ class VisualComparisonApp(customtkinter.CTk):
         value = int(value)
         self.content_handler.set_video_position(value)
         self.video_controls.update_widget(*self.content_handler.get_video_position())
-        # self.app_status.VIDEO_PAUSED = True
+
         ret, images = self.content_handler.read_frames()
         if ret:
             self.images = images
 
     def on_specify_index(self, index=None):
+        self.on_pause(paused=True)
+
         upper_bound = len(self.content_handler.current_files) - 1
         if index is None:
             popup = GetNumberBetweenRangePopup(
@@ -350,7 +358,7 @@ class VisualComparisonApp(customtkinter.CTk):
             self.reset_video_writer()
             return
 
-        self.app_status.VIDEO_PAUSED = True
+        self.on_pause(paused=True)
 
         export_select_popup = ExportSelectionPopup()
         cancelled, export_format = export_select_popup.get_input()
@@ -474,8 +482,7 @@ class VisualComparisonApp(customtkinter.CTk):
             self.content_handler.load_files(self.content_handler.get_paths())
             self.display_handler.mouse_position = (0, 0)
             self.app_status.STATE = VCState.UPDATED
-            self.app_status.VIDEO_PAUSED = False
-            self.video_controls.pause(False)
+            self.on_pause(paused=False)
             self.zoom_manager.reset()
 
         # Show or hide video controller
@@ -496,8 +503,7 @@ class VisualComparisonApp(customtkinter.CTk):
         else:
             ret, images = self.content_handler.read_frames()
             if not ret:
-                self.app_status.VIDEO_PAUSED = True
-                self.video_controls.pause(True)
+                self.on_pause(paused=True)
                 images = self.images
             else:
                 self.images = images
