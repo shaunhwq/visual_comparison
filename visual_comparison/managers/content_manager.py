@@ -32,8 +32,15 @@ class ContentManager:
         self.data = []
         self.thumbnails = []
         self.data_titles = ["S/N", "File Path", "Height", "Width", "Frame Count", "FPS"]
+
+        # For fast image reading
+        self.executor = ThreadPoolExecutor(max_workers=4)
+
         # Collect and store file information. Time vs memory trade off. Reduce wait for many files.
         self.get_data()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.executor.shutdown(wait=False)
 
     def get_data(self):
         if not (len(self.methods) > 0 and len(self.files) > 0):
@@ -42,10 +49,11 @@ class ContentManager:
         # Load images for preview window. Multi thread for faster reading.
         file_paths = file_utils.complete_paths(self.root, self.preview_folder, self.files)
 
-        with ThreadPoolExecutor() as executor:
-            return_values = tqdm(iterable=executor.map(self.load_file_info, file_paths),
-                                 desc="Loading file info...",
-                                 total=len(file_paths))
+        return_values = tqdm(
+            iterable=self.executor.map(self.load_file_info, file_paths),
+            desc="Loading file info...",
+            total=len(file_paths)
+        )
 
         for idx, (thumbnail, data) in enumerate(return_values):
             self.thumbnails.append(thumbnail)
@@ -154,7 +162,7 @@ class ContentManager:
         return video_position, video_length, video_fps
 
     def read_frames(self):
-        outputs = [cap.read() for cap in self.content_loaders]
+        outputs = list(self.executor.map(lambda cap: cap.read(), self.content_loaders))
         rets = [out[0] for out in outputs]
         frames = [out[1] for out in outputs]
         return all(rets), frames

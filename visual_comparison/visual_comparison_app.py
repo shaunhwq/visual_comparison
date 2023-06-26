@@ -40,6 +40,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
         self.root = root
         self.preview_folder = preview_folder
+        self.MAX_FPS = 60.0
 
         # Maintains the selected method & function for the app
         self.app_status = VCInternalState()
@@ -135,7 +136,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def on_change_playback_rate(self, new_rate):
         if new_rate == "Max":
-            self.app_status.VIDEO_PLAYBACK_RATE = 100.0
+            self.app_status.VIDEO_PLAYBACK_RATE = self.MAX_FPS
         else:
             # Strip 'x' at the back e.g. 1.5x, 1x, 2x -> 1.5, 1, 2
             new_rate = new_rate[:-1]
@@ -376,13 +377,13 @@ class VisualComparisonApp(customtkinter.CTk):
         if self.content_handler.has_video():
             _, _, video_fps = self.content_handler.get_video_position()
         else:
-            video_fps = 60.0
+            video_fps = self.MAX_FPS
 
         export_video_popup = ExportVideoPopup(
             file_name=os.path.splitext(self.content_handler.current_files[self.content_handler.current_index])[0],
             img_width=width,
             img_height=height,
-            video_fps=video_fps if self.content_handler.has_video() else 60.0,
+            video_fps=video_fps if self.content_handler.has_video() else self.MAX_FPS,
         )
         cancelled, video_export_options = export_video_popup.get_input()
         if cancelled:
@@ -498,7 +499,9 @@ class VisualComparisonApp(customtkinter.CTk):
             self.video_controls.update_widget(*self.content_handler.get_video_position())
 
         # Read images/videos
-        if self.app_status.VIDEO_PAUSED:
+        if not self.content_handler.has_video():
+            ret, images = self.content_handler.read_frames()
+        elif self.app_status.VIDEO_PAUSED:
             images = self.images
         else:
             ret, images = self.content_handler.read_frames()
@@ -595,9 +598,10 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def get_sleep_time_ms(self, start_time):
         # Calculate T = 1/f, time budget for video playback
-        target_fps = 60.0
+        target_fps = self.MAX_FPS
         if self.content_handler.has_video():
             target_fps = self.content_handler.get_video_position()[2] * self.app_status.VIDEO_PLAYBACK_RATE
+            target_fps = min(target_fps, self.MAX_FPS)
         target_period_s = 1.0 / target_fps
 
         # Find offset time
@@ -609,5 +613,8 @@ class VisualComparisonApp(customtkinter.CTk):
         time_elapsed_s = time.time() - start_time
         time_to_sleep_ms = (target_period_s - time_elapsed_s - offset_period_s) * 1000
         time_to_sleep_ms = max(1, int(round(time_to_sleep_ms, 0)))
+
+        # self.after does not accept values < 1
+        assert time_to_sleep_ms >= 1, "Sleep time cannot be below 1"
 
         return time_to_sleep_ms
