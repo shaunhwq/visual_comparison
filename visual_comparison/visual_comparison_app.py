@@ -85,6 +85,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.display_handler.grid(row=3, column=0)
         self.zoom_manager = ZoomManager(self.display_handler)
 
+        # File changing bindings
         self.bind("a", self.on_prev_file)
         self.bind("d", self.on_next_file)
         self.bind("<Left>", self.on_prev_file)
@@ -94,7 +95,11 @@ class VisualComparisonApp(customtkinter.CTk):
         self.bind("c", self.on_next_method)
         self.bind("<Up>", self.on_prev_method)
         self.bind("<Down>", self.on_next_method)
-
+        # Skip frame bindings
+        self.bind("-", lambda event: self.on_set_video_position(-1, relative=True))
+        self.bind("=", lambda event: self.on_set_video_position(1, relative=True))
+        self.bind("_", lambda event: self.on_set_video_position(-10, relative=True))
+        self.bind("+", lambda event: self.on_set_video_position(10, relative=True))
         # Bind Ctrl C or Cmd C to copy image.
         bind_copy_cmd = "<M1-c>" if platform.system() == "Darwin" else "<Control-c>"
         self.bind(bind_copy_cmd, self.on_copy_image)
