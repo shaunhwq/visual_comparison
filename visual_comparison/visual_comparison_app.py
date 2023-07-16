@@ -367,8 +367,8 @@ class VisualComparisonApp(customtkinter.CTk):
         self.on_pause(paused=True)
 
         export_select_popup = ExportSelectionPopup()
-        cancelled, export_format = export_select_popup.get_input()
-        if cancelled:
+        is_cancelled, export_format = export_select_popup.get_input()
+        if is_cancelled:
             return
 
         if export_format == "Image":
@@ -390,9 +390,8 @@ class VisualComparisonApp(customtkinter.CTk):
             img_height=height,
             video_fps=video_fps if self.content_handler.has_video() else self.MAX_FPS,
         )
-        cancelled, video_export_options = export_video_popup.get_input()
-        if cancelled:
-            print("Cancelled")
+        is_cancelled, video_export_options = export_video_popup.get_input()
+        if is_cancelled:
             return
 
         export_type = video_export_options["export_type"]
