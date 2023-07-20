@@ -14,9 +14,10 @@ from tqdm import tqdm
 
 from .managers import ZoomManager, ContentManager, VideoWriter
 from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
-from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup, ExportVideoPopup, ExportSelectionPopup, ProgressBarPopup
+from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup, ExportVideoPopup, ExportSelectionPopup, ProgressBarPopup, SettingsPopupWidget
 from .enums import VCModes, VCState
-from .utils import image_utils
+from .utils import image_utils, set_appearance_mode_and_theme
+from .configurations import read_config, parse_config, config_info
 
 
 @dataclasses.dataclass
@@ -35,12 +36,16 @@ class VCInternalState:
 
 
 class VisualComparisonApp(customtkinter.CTk):
-    def __init__(self, root=None, preview_folder=None):
+    def __init__(self, root=None, preview_folder=None, config_path="visual_comparison/config.ini"):
         super().__init__()
+
+        self.config_path = config_path
+        self.configurations = parse_config(read_config(config_path))
+
+        set_appearance_mode_and_theme(self.configurations["Appearance"]["mode"], self.configurations["Appearance"]["theme"])
 
         self.root = root
         self.preview_folder = preview_folder
-        self.MAX_FPS = 60.0
 
         # Maintains the selected method & function for the app
         self.app_status = VCInternalState()
@@ -63,6 +68,7 @@ class VisualComparisonApp(customtkinter.CTk):
             on_export=self.on_export,
             on_copy_image=self.on_copy_image,
             on_change_dir=self.on_change_dir,
+            on_change_settings=self.on_change_settings,
         )
         self.cb_widget = ControlButtonsWidget(master=self, callbacks=cb_callbacks)
         self.cb_widget.populate_mode_button(VCModes, self.on_change_mode)
@@ -141,11 +147,23 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def on_change_playback_rate(self, new_rate):
         if new_rate == "Max":
-            self.app_status.VIDEO_PLAYBACK_RATE = self.MAX_FPS
+            self.app_status.VIDEO_PLAYBACK_RATE = self.configurations["Functionality"]["max_fps"]
         else:
             # Strip 'x' at the back e.g. 1.5x, 1x, 2x -> 1.5, 1, 2
             new_rate = new_rate[:-1]
             self.app_status.VIDEO_PLAYBACK_RATE = float(new_rate)
+
+    def on_change_settings(self):
+        self.on_pause(paused=True)
+
+        settings_popup = SettingsPopupWidget(self.config_path, config_info)
+        is_cancelled, new_config = settings_popup.get_input()
+
+        if is_cancelled:
+            return
+
+        set_appearance_mode_and_theme(new_config["Appearance"]["mode"], new_config["Appearance"]["theme"])
+        self.configurations = new_config
 
     def on_change_dir(self):
         self.on_pause(paused=True)
@@ -382,13 +400,13 @@ class VisualComparisonApp(customtkinter.CTk):
         if self.content_handler.has_video():
             _, _, video_fps = self.content_handler.get_video_position()
         else:
-            video_fps = self.MAX_FPS
+            video_fps = self.configurations["Functionality"]["max_fps"]
 
         export_video_popup = ExportVideoPopup(
             file_name=os.path.splitext(self.content_handler.current_files[self.content_handler.current_index])[0],
             img_width=width,
             img_height=height,
-            video_fps=video_fps if self.content_handler.has_video() else self.MAX_FPS,
+            video_fps=video_fps if self.content_handler.has_video() else self.configurations["Functionality"]["max_fps"],
         )
         is_cancelled, video_export_options = export_video_popup.get_input()
         if is_cancelled:
@@ -533,20 +551,20 @@ class VisualComparisonApp(customtkinter.CTk):
         # Set to self.output image incase mouse is out of bounds
         if self.app_status.MODE == VCModes.Concat:
             comparison_img = np.hstack(images)
-            self.cropped_image = self.zoom_manager.crop_regions(images)
+            self.cropped_image = self.zoom_manager.crop_regions(images, self.configurations["Zoom"]["interpolation_type"])
             self.output_image = self.zoom_manager.draw_regions(comparison_img, num_images=len(images))
 
         elif self.app_status.MODE == VCModes.Specific:
             method_idx = current_methods.index(self.app_status.METHOD)
             comparison_img = images[method_idx]
-            self.cropped_image = self.zoom_manager.crop_regions([comparison_img])
+            self.cropped_image = self.zoom_manager.crop_regions([comparison_img], self.configurations["Zoom"]["interpolation_type"])
             self.output_image = self.zoom_manager.draw_regions(comparison_img)
         else:
             m_x, m_y = self.display_handler.mouse_position
             i_y, i_x = images[0].shape[:2]
             if 0 <= m_x < i_x and 0 <= m_y < i_y:
                 comparison_img = image_utils.merge_multiple_images(images[:4], self.display_handler.mouse_position)
-                self.cropped_image = self.zoom_manager.crop_regions([comparison_img])
+                self.cropped_image = self.zoom_manager.crop_regions([comparison_img], self.configurations["Zoom"]["interpolation_type"])
                 self.output_image = self.zoom_manager.draw_regions(comparison_img)
 
         # Cropped image is displayed below original image
@@ -559,12 +577,10 @@ class VisualComparisonApp(customtkinter.CTk):
         if self.video_writer is not None:
             self.handle_custom_video_writing(display_image)
 
-        self.display_handler.update_image(display_image)
+        self.display_handler.update_image(display_image, self.configurations["Display"]["interpolation_type"])
 
-        # Refresh slower if in background to minimize cpu usage
-        out_of_focus = self.focus_get() is None
-        refresh_after = 500 if out_of_focus else self.get_sleep_time_ms(start_time)
-        self.after(refresh_after, self.display)
+        # Decide how long to sleep before calling next cycle of self.display
+        self.after(self.get_sleep_time_ms(start_time), self.display)
 
     def reset_video_writer(self):
         self.video_writer.release()
@@ -600,12 +616,27 @@ class VisualComparisonApp(customtkinter.CTk):
         # Inform user that it is still recording
         image_utils.put_text(img_to_write, "Recording", image_utils.TextPosition.TOP_CENTER, fg_color=(0, 0, 255))
 
-    def get_sleep_time_ms(self, start_time):
+    def get_sleep_time_ms(self, start_time: float):
+        """
+        Time to sleep = 500ms if its in background and reduce_cpu_usage_in_background is True.
+
+        Otherwise, it will calculate the time to sleep to achieve the desired fps.
+
+        Desired fps depends on whether it is doing an image or video comparison. If displaying images, it uses max_fps.
+        For videos, it depends on the video fps and video playback rate.
+
+        :param start_time: time.time() from start of self.display
+        :return: Time to sleep in ms
+        """
+        out_of_focus = self.focus_get() is None
+        if out_of_focus and self.configurations["Functionality"]["reduce_cpu_usage_in_background"]:
+            return 500
+
         # Calculate T = 1/f, time budget for video playback
-        target_fps = self.MAX_FPS
+        target_fps = self.configurations["Functionality"]["max_fps"]
         if self.content_handler.has_video():
             target_fps = self.content_handler.get_video_position()[2] * self.app_status.VIDEO_PLAYBACK_RATE
-            target_fps = min(target_fps, self.MAX_FPS)
+            target_fps = min(target_fps, self.configurations["Functionality"]["max_fps"])
         target_period_s = 1.0 / target_fps
 
         # Find offset time

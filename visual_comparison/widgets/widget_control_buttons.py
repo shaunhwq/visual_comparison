@@ -44,6 +44,8 @@ class ControlButtonsWidget(customtkinter.CTkFrame):
         button_copy.grid(row=0, column=1, padx=5)
         button_change_dir = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_change_dir"], text="Change Dir")
         button_change_dir.grid(row=0, column=2, padx=5)
+        button_settings = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_change_settings"], text="Settings")
+        button_settings.grid(row=0, column=3, padx=5)
         frame_02.grid(row=0, column=2, padx=10)
 
         # For changing to 'Specific' mode

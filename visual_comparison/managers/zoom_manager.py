@@ -121,10 +121,11 @@ class ZoomManager:
 
         return image
 
-    def crop_regions(self, images: List[np.array]) -> np.array:
+    def crop_regions(self, images: List[np.array], interpolation: int) -> np.array:
         """
         Crops the input image(s) and resizes width to match the final image width to stack one on the other
         :param images: Images to crop
+        :param interpolation: Type of interpolation to use to resize crops
         :return: Cropped and resized image
         """
         if len(self.zoom_bbox_pts) != 2:
@@ -149,4 +150,4 @@ class ZoomManager:
 
         total_length = sum(image.shape[1] for image in images)
         scale = total_length / stacked_crops.shape[1]
-        return image_utils.resize_scale(stacked_crops, scale=scale, interpolation=cv2.INTER_NEAREST)
+        return image_utils.resize_scale(stacked_crops, scale=scale, interpolation=interpolation)

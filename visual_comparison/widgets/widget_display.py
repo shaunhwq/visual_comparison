@@ -1,8 +1,11 @@
-import customtkinter
-import cv2
 import platform
-from ..utils import image_utils as image_utils
+
+import cv2
+import numpy as np
+import customtkinter
 from PIL import Image
+
+from ..utils import image_utils as image_utils
 
 
 __all__ = ["DisplayWidget"]
@@ -18,7 +21,13 @@ class DisplayWidget(customtkinter.CTkFrame):
         self.image_label.bind("<Motion>", self.on_mouse_move)
         self.scale = 1
 
-    def update_image(self, image):
+    def update_image(self, image: np.array, interpolation: int):
+        """
+        Update display widget with new image
+        :param image: Image to display
+        :param interpolation: cv2 interpolation type. E.g. cv2.INTER_NEAREST, cv2.INTER_LINEAR
+        :return:
+        """
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         h, w, _ = image.shape
         # Different systems have different borders which use part of the screen for their display (dock etc)
@@ -26,7 +35,7 @@ class DisplayWidget(customtkinter.CTkFrame):
         screen_h, screen_w = self.master.winfo_screenheight() * h_multiplier, self.master.winfo_screenwidth()
         if w > screen_w or h > screen_h:
             self.scale = 1 / max(w / screen_w, h / screen_h)
-            image = image_utils.resize_scale(image, scale=self.scale, interpolation=cv2.INTER_NEAREST)
+            image = image_utils.resize_scale(image, scale=self.scale, interpolation=interpolation)
             h, w, _ = image.shape
         else:
             self.scale = 1
