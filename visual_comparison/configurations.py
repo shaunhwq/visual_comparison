@@ -36,6 +36,21 @@ config_info = dict(
         max_fps=dict(obj="entry", type=int, default=60),
         reduce_cpu_usage_in_background=dict(obj="options", type=bool, values=["true", "false"], default="true"),
     ),
+    Keybindings=dict(
+        prev_file=dict(obj="entry", type=str, default="a"),
+        next_file=dict(obj="entry", type=str, default="d"),
+        prev_file_alternate=dict(obj="entry", type=str, default="<Left>"),
+        next_file_alternate=dict(obj="entry", type=str, default="<Right>"),
+        pause_video=dict(obj="entry", type=str, default="<space>"),
+        prev_method=dict(obj="entry", type=str, default="z"),
+        next_method=dict(obj="entry", type=str, default="c"),
+        prev_method_alternate=dict(obj="entry", type=str, default="<Up>"),
+        next_method_alternate=dict(obj="entry", type=str, default="<Down>"),
+        skip_to_1_frame_before=dict(obj="entry", type=str, default="-"),
+        skip_to_1_frame_after=dict(obj="entry", type=str, default="="),
+        skip_to_10_frame_before=dict(obj="entry", type=str, default="_"),
+        skip_to_10_frame_after=dict(obj="entry", type=str, default="+"),
+    ),
 )
 
 

@@ -92,20 +92,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.zoom_manager = ZoomManager(self.display_handler)
 
         # File changing bindings
-        self.bind("a", self.on_prev_file)
-        self.bind("d", self.on_next_file)
-        self.bind("<Left>", self.on_prev_file)
-        self.bind("<Right>", self.on_next_file)
-        self.bind("<space>", self.on_pause)
-        self.bind("z", self.on_prev_method)
-        self.bind("c", self.on_next_method)
-        self.bind("<Up>", self.on_prev_method)
-        self.bind("<Down>", self.on_next_method)
-        # Skip frame bindings
-        self.bind("-", lambda event: self.on_set_video_position(-1, relative=True))
-        self.bind("=", lambda event: self.on_set_video_position(1, relative=True))
-        self.bind("_", lambda event: self.on_set_video_position(-10, relative=True))
-        self.bind("+", lambda event: self.on_set_video_position(10, relative=True))
+        self.bind_keys_to_buttons()
         # Bind Ctrl C or Cmd C to copy image.
         bind_copy_cmd = "<M1-c>" if platform.system() == "Darwin" else "<Control-c>"
         self.bind(bind_copy_cmd, self.on_copy_image)
@@ -155,15 +142,16 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def on_change_settings(self):
         self.on_pause(paused=True)
-
         settings_popup = SettingsPopupWidget(self.config_path, config_info)
         is_cancelled, new_config = settings_popup.get_input()
 
         if is_cancelled:
             return
 
-        set_appearance_mode_and_theme(new_config["Appearance"]["mode"], new_config["Appearance"]["theme"])
+        prev_config = self.configurations
         self.configurations = new_config
+        self.bind_keys_to_buttons(prev_config)
+        set_appearance_mode_and_theme(new_config["Appearance"]["mode"], new_config["Appearance"]["theme"])
 
     def on_change_dir(self):
         self.on_pause(paused=True)
@@ -198,6 +186,42 @@ class VisualComparisonApp(customtkinter.CTk):
         current_idx = methods.index(self.app_status.METHOD) if self.app_status.METHOD is not None else 0
         desired_index = (current_idx + 1) % len(methods)
         self.on_change_mode(VCModes.Specific, methods[desired_index])
+
+    def bind_keys_to_buttons(self, prev_config=None) -> None:
+        """
+        :param prev_config: Previous configuration. Will unbind if present
+        :return: None
+        """
+        # Unbind if present
+        if prev_config is not None:
+            self.unbind(prev_config["Keybindings"]["prev_file"])
+            self.unbind(prev_config["Keybindings"]["next_file"])
+            self.unbind(prev_config["Keybindings"]["prev_file_alternate"])
+            self.unbind(prev_config["Keybindings"]["next_file_alternate"])
+            self.unbind(prev_config["Keybindings"]["pause_video"])
+            self.unbind(prev_config["Keybindings"]["prev_method"])
+            self.unbind(prev_config["Keybindings"]["next_method"])
+            self.unbind(prev_config["Keybindings"]["prev_method_alternate"])
+            self.unbind(prev_config["Keybindings"]["next_method_alternate"])
+            self.unbind(prev_config["Keybindings"]["skip_to_1_frame_before"])
+            self.unbind(prev_config["Keybindings"]["skip_to_1_frame_after"])
+            self.unbind(prev_config["Keybindings"]["skip_to_10_frame_before"])
+            self.unbind(prev_config["Keybindings"]["skip_to_10_frame_after"])
+
+        # Bind Keys to buttons
+        self.bind(self.configurations["Keybindings"]["prev_file"], self.on_prev_file)
+        self.bind(self.configurations["Keybindings"]["next_file"], self.on_next_file)
+        self.bind(self.configurations["Keybindings"]["prev_file_alternate"], self.on_prev_file)
+        self.bind(self.configurations["Keybindings"]["next_file_alternate"], self.on_next_file)
+        self.bind(self.configurations["Keybindings"]["pause_video"], self.on_pause)
+        self.bind(self.configurations["Keybindings"]["prev_method"], self.on_prev_method)
+        self.bind(self.configurations["Keybindings"]["next_method"], self.on_next_method)
+        self.bind(self.configurations["Keybindings"]["prev_method_alternate"], self.on_prev_method)
+        self.bind(self.configurations["Keybindings"]["next_method_alternate"], self.on_next_method)
+        self.bind(self.configurations["Keybindings"]["skip_to_1_frame_before"], lambda event: self.on_set_video_position(-1, relative=True))
+        self.bind(self.configurations["Keybindings"]["skip_to_1_frame_after"], lambda event: self.on_set_video_position(1, relative=True))
+        self.bind(self.configurations["Keybindings"]["skip_to_10_frame_before"], lambda event: self.on_set_video_position(-10, relative=True))
+        self.bind(self.configurations["Keybindings"]["skip_to_10_frame_after"], lambda event: self.on_set_video_position(10, relative=True))
 
     def bind_methods_to_keys(self):
         current_methods = self.content_handler.current_methods
