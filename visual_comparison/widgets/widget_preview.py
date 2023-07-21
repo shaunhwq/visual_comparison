@@ -165,4 +165,5 @@ class PreviewWidget(customtkinter.CTkFrame):
                     self.set_view_by_index(min(len(self.buttons) - 1, self.view_index + self.view_radius), "right")
                     self.view_index = new_index
             else:
-                self.canvas_viewport.xview_scroll(-1 * int(event.delta), "units")
+                scroll_amount = int(-1 * event.delta / abs(event.delta))
+                self.canvas_viewport.xview_scroll(scroll_amount, "units")
