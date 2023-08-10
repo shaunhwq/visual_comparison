@@ -12,11 +12,11 @@ import numpy as np
 import customtkinter
 from tqdm import tqdm
 
-from .managers import ZoomManager, ContentManager, VideoWriter
+from .managers import ZoomManager, ContentManager, VideoWriter, FastLoadChecker
 from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
 from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup, ExportVideoPopup, ExportSelectionPopup, ProgressBarPopup, SettingsPopupWidget
 from .enums import VCModes, VCState
-from .utils import image_utils, set_appearance_mode_and_theme
+from .utils import image_utils, set_appearance_mode_and_theme, file_reader
 from .configurations import read_config, parse_config, config_info
 
 
@@ -51,6 +51,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.app_status = VCInternalState()
         self.content_handler: Optional[ContentManager] = None
         self.images = None
+        self.fast_load_checker = FastLoadChecker()
 
         # Create Preview Window
         self.preview_widget = PreviewWidget(master=self)
@@ -360,11 +361,13 @@ class VisualComparisonApp(customtkinter.CTk):
         self.content_handler.on_prev()
         self.preview_widget.highlight_selected(self.content_handler.current_index)
         self.app_status.STATE = VCState.UPDATE_FILE
+        self.fast_load_checker.update()
 
     def on_next_file(self, event: Optional[tkinter.Event] = None):
         self.content_handler.on_next()
         self.preview_widget.highlight_selected(self.content_handler.current_index)
         self.app_status.STATE = VCState.UPDATE_FILE
+        self.fast_load_checker.update()
 
     def on_change_mode(self, mode, method=None):
         if method is None:
@@ -522,6 +525,16 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def display(self):
         start_time = time.time()
+
+        # Fast loading - Activates if change file button is held repeatedly (a, d, <, > keys)
+        # Prevents very long load times when has many videos/images to load and want to use buttons to switch quickly
+        # TODO: Put in config, Check if works on video
+        if self.fast_load_checker.check(threshold_ms=100) and self.app_status.STATE == VCState.UPDATE_FILE:
+            cap = file_reader.read_media_file(self.content_handler.get_paths()[0])
+            ret, display_image = cap.read()
+            self.display_handler.update_image(display_image, self.configurations["Display"]["interpolation_type"])
+            self.after(self.get_sleep_time_ms(start_time), self.display)
+            return
 
         # Read the files when changing method or files.
         if self.app_status.STATE == VCState.UPDATE_FILE or self.app_status.STATE == VCState.UPDATE_METHOD:
