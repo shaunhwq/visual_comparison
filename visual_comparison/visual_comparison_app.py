@@ -528,8 +528,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
         # Fast loading - Activates if change file button is held repeatedly (a, d, <, > keys)
         # Prevents very long load times when has many videos/images to load and want to use buttons to switch quickly
-        # TODO: Put in config, Check if works on video
-        if self.fast_load_checker.check(threshold_ms=100) and self.app_status.STATE == VCState.UPDATE_FILE:
+        if self.fast_load_checker.check(threshold_ms=self.configurations["Display"]["fast_loading_threshold_ms"]) and self.app_status.STATE == VCState.UPDATE_FILE:
             cap = file_reader.read_media_file(self.content_handler.get_paths()[0])
             ret, display_image = cap.read()
             self.display_handler.update_image(display_image, self.configurations["Display"]["interpolation_type"])

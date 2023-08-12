@@ -28,6 +28,7 @@ config_info = dict(
     ),
     Display=dict(
         interpolation_type=dict(obj="options", type=eval, values=CV2_INTERPOLATION_TYPES, default="cv2.INTER_LINEAR"),
+        fast_loading_threshold_ms=dict(obj="entry", type=int, default=100),
     ),
     Zoom=dict(
         interpolation_type=dict(obj="options", type=eval, values=CV2_INTERPOLATION_TYPES, default="cv2.INTER_NEAREST"),
