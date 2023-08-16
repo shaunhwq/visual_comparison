@@ -602,6 +602,9 @@ class VisualComparisonApp(customtkinter.CTk):
                 comparison_img = image_utils.merge_multiple_images(images[:4], self.display_handler.mouse_position)
                 self.cropped_image = self.zoom_manager.crop_regions([comparison_img], self.configurations["Zoom"]["interpolation_type"])
                 self.output_image = self.zoom_manager.draw_regions(comparison_img)
+            elif self.app_status.STATE == VCState.UPDATE_MODE:
+                self.app_status.STATE = VCState.UPDATED
+                self.display_handler.mouse_position = (0, 0)
 
         # Cropped image is displayed below original image
         display_image = np.vstack([self.output_image, self.cropped_image]) if self.cropped_image is not None else self.output_image
