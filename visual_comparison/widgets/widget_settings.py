@@ -55,7 +55,8 @@ class SettingsPopupWidget(customtkinter.CTkToplevel):
                 else:
                     raise NotImplementedError(f"Check configuration_options. Unknown obj: '{desired_ctk_obj}'")
 
-                reset_default_button = customtkinter.CTkButton(master=tab, width=25, height=25, image=icon_manager.restore_icon, fg_color="gray", text="", command=lambda params=(section_name, key): self.on_restore_to_default(*params))
+                # Set width and height to same dim to make a square button
+                reset_default_button = customtkinter.CTkButton(master=tab, width=height, height=height, image=icon_manager.restore_icon, fg_color="gray", text="", command=lambda params=(section_name, key): self.on_restore_to_default(*params))
                 reset_default_button.grid(row=i, column=2, padx=(0, 20), pady=pady)
 
                 # Write to storage for later. Use this format because it is easier
