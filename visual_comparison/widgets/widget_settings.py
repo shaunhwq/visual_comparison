@@ -84,6 +84,11 @@ class SettingsPopupWidget(customtkinter.CTkToplevel):
             for key in self.configuration_info[section].keys():
                 self.on_restore_to_default(section, key)
 
+        self.grab_release()
+        msg_popup = MessageBoxPopup(f"Reset all settings to defaults")
+        msg_popup.wait()
+        self.grab_set()
+
     def on_restore_to_default(self, section, key):
         default_value = str(self.configuration_info[section][key]["default"])
         ctk_object = self.ctk_objects[f"{section}_{key}"]
