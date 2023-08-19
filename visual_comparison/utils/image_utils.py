@@ -1,3 +1,4 @@
+import sys
 import os
 import enum
 import platform
@@ -9,6 +10,16 @@ import cv2
 import numpy as np
 from PIL import Image
 from typing import Tuple, List
+
+
+try:
+    system = platform.system()
+    if system == "Windows":
+        import win32clipboard
+    elif system == "Linux":
+        import klembord
+except ImportError as err:
+    sys.exit(f"Clipboard operations require additional Python packages. Error: {err}")
 
 
 __all__ = [
@@ -195,12 +206,6 @@ def image_to_clipboard(image):
 
 def _image_to_clipboard_windows(image: np.array):
     # https://stackoverflow.com/questions/34322132/copy-image-to-clipboard
-    try:
-        import win32clipboard
-    except ImportError as err:
-        print(f"win32clipboard is required for clipboard operations. Run 'pip3 install pywin32'. Err: {err}")
-        return
-
     rgb_copy = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     pil_img = Image.fromarray(rgb_copy)
     # Save the image as binary data
@@ -224,12 +229,6 @@ def _image_to_clipboard_macos(image: np.array):
 
 def _image_to_clipboard_linux(image: np.array):
     # https://stackoverflow.com/questions/56618983/how-do-i-copy-a-pil-picture-to-clipboard
-    try:
-        import klembord
-    except ImportError as err:
-        print(f"Klembord is required for clipboard operations. Run 'pip3 install klembord. Err: {err}")
-        return
-
     rgb_copy = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     pil_img = Image.fromarray(rgb_copy)
     # Save the image as binary data
