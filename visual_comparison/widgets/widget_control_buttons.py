@@ -1,5 +1,6 @@
 import customtkinter
 from ..enums import VCModes
+from .. import utils
 
 
 __all__ = ["ControlButtonsWidget"]
@@ -37,14 +38,18 @@ class ControlButtonsWidget(customtkinter.CTkFrame):
 
         # For exporting and copying files
         frame_02 = customtkinter.CTkFrame(master=self)
-        self.button_export = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_export"], text="Export")
+        self.button_export = customtkinter.CTkButton(master=frame_02, width=25, height=25, command=callbacks["on_export"], text="", image=utils.load_ctk_image("visual_comparison/assets/icons/export_icon.png"))
+        utils.create_tool_tip(self.button_export, "Export")
         self.button_export.grid(row=0, column=0, padx=5)
         self.default_button_color = self.button_export.cget("fg_color")
-        button_copy = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_copy_image"], text="Copy")
+        button_copy = customtkinter.CTkButton(master=frame_02, width=25, height=25, command=callbacks["on_copy_image"], text="", image=utils.load_ctk_image("visual_comparison/assets/icons/copy_icon.png"))
+        utils.create_tool_tip(button_copy, "Copy")
         button_copy.grid(row=0, column=1, padx=5)
-        button_change_dir = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_change_dir"], text="Change Dir")
+        button_change_dir = customtkinter.CTkButton(master=frame_02, width=25, height=25, command=callbacks["on_change_dir"], text="", image=utils.load_ctk_image("visual_comparison/assets/icons/folder_icon.png"))
+        utils.create_tool_tip(button_change_dir, "Change Directory")
         button_change_dir.grid(row=0, column=2, padx=5)
-        button_settings = customtkinter.CTkButton(master=frame_02, width=50, height=25, command=callbacks["on_change_settings"], text="Settings")
+        button_settings = customtkinter.CTkButton(master=frame_02, width=25, height=25, command=callbacks["on_change_settings"], text="", image=utils.load_ctk_image("visual_comparison/assets/icons/settings_icon.png"))
+        utils.create_tool_tip(button_settings, "Settings")
         button_settings.grid(row=0, column=3, padx=5)
         frame_02.grid(row=0, column=2, padx=10)
 
