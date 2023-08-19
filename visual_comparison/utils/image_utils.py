@@ -13,13 +13,13 @@ from typing import Tuple, List
 
 
 try:
-    system = platform.system()
-    if system == "Windows":
+    operating_system = platform.system()
+    if operating_system == "Windows":
         import win32clipboard
-    elif system == "Linux":
+    elif operating_system == "Linux":
         import klembord
 except ImportError as err:
-    sys.exit(f"Clipboard operations require additional Python packages. Error: {err}")
+    sys.exit(f"Clipboard operations require additional Python packages. Error: {err}. Refer to README.md for installation instructions")
 
 
 __all__ = [
