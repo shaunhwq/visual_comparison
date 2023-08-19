@@ -5,13 +5,14 @@ import customtkinter
 from visual_comparison.utils import shift_widget_to_root_center
 from ..configurations import read_config, write_config, parse_config
 from .widget_pop_ups import MessageBoxPopup
+from ..managers import IconManager
 
 
 __all__ = ["SettingsPopupWidget"]
 
 
 class SettingsPopupWidget(customtkinter.CTkToplevel):
-    def __init__(self, configuration_path, configuration_info, *args, **kwargs):
+    def __init__(self, configuration_path, configuration_info, icon_manager: IconManager, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title("Settings")
 
@@ -54,6 +55,9 @@ class SettingsPopupWidget(customtkinter.CTkToplevel):
                 else:
                     raise NotImplementedError(f"Check configuration_options. Unknown obj: '{desired_ctk_obj}'")
 
+                reset_default_button = customtkinter.CTkButton(master=tab, width=25, height=25, image=icon_manager.restore_icon, fg_color="gray", text="", command=lambda params=(section_name, key): self.on_restore_to_default(*params))
+                reset_default_button.grid(row=i, column=2, padx=(0, 20), pady=pady)
+
                 # Write to storage for later. Use this format because it is easier
                 self.ctk_objects[f"{section_name}_{key}"] = ctk_obj
 
@@ -61,8 +65,10 @@ class SettingsPopupWidget(customtkinter.CTkToplevel):
         button_frame = customtkinter.CTkFrame(self, height=height, width=100)
         cancel_button = customtkinter.CTkButton(master=button_frame, height=25, width=50, text="Cancel", command=self.destroy)
         cancel_button.grid(row=0, column=0, padx=20)
+        all_defaults_button = customtkinter.CTkButton(master=button_frame, height=25, width=50, text="Default (all)", command=self.on_restore_all_to_defaults)
+        all_defaults_button.grid(row=0, column=1, padx=(0, 20))
         confirm_button = customtkinter.CTkButton(master=button_frame, height=25, width=50, text="Confirm", command=self.on_confirm)
-        confirm_button.grid(row=0, column=1, padx=(0, 20))
+        confirm_button.grid(row=0, column=2, padx=(0, 20))
         button_frame.grid(row=1, column=0, pady=(0, 20))
 
         self.return_value = None
@@ -71,6 +77,23 @@ class SettingsPopupWidget(customtkinter.CTkToplevel):
         self.grab_set()  # make other windows not clickable
         self.update_idletasks()
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
+    def on_restore_all_to_defaults(self):
+        for section in self.configuration_info.keys():
+            for key in self.configuration_info[section].keys():
+                self.on_restore_to_default(section, key)
+
+    def on_restore_to_default(self, section, key):
+        default_value = str(self.configuration_info[section][key]["default"])
+        ctk_object = self.ctk_objects[f"{section}_{key}"]
+
+        if isinstance(ctk_object, customtkinter.CTkOptionMenu):
+            ctk_object.set(default_value)
+        elif isinstance(ctk_object, customtkinter.CTkEntry):
+            ctk_object.delete(0, len(ctk_object.get()))
+            ctk_object.insert(0, default_value)
+        else:
+            raise NotImplementedError(f"Unable to reset to default for object type: '{ctk_object}'")
 
     def on_confirm(self) -> None:
         """

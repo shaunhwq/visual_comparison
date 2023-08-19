@@ -24,7 +24,7 @@ CV2_INTERPOLATION_TYPES = [
 config_info = dict(
     Appearance=dict(
         mode=dict(obj="options", type=str, values=["System", "Dark", "Light"], default="System"),
-        theme=dict(obj="options", type=str, values=["blue", "green", "dark-blue"], default="blue"),
+        theme=dict(obj="options", type=str, values=["blue", "green", "dark-blue"], default="dark-blue"),
     ),
     Display=dict(
         interpolation_type=dict(obj="options", type=eval, values=CV2_INTERPOLATION_TYPES, default="cv2.INTER_LINEAR"),

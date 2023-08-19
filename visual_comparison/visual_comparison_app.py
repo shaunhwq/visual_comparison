@@ -12,7 +12,7 @@ import numpy as np
 import customtkinter
 from tqdm import tqdm
 
-from .managers import ZoomManager, ContentManager, VideoWriter, FastLoadChecker
+from .managers import ZoomManager, ContentManager, VideoWriter, FastLoadChecker, IconManager
 from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
 from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup, ExportVideoPopup, ExportSelectionPopup, ProgressBarPopup, SettingsPopupWidget
 from .enums import VCModes, VCState
@@ -36,7 +36,7 @@ class VCInternalState:
 
 
 class VisualComparisonApp(customtkinter.CTk):
-    def __init__(self, root=None, preview_folder=None, config_path="visual_comparison/config.ini"):
+    def __init__(self, root=None, preview_folder=None, config_path="visual_comparison/config.ini", assets_path="visual_comparison/assets/"):
         super().__init__()
 
         self.config_path = config_path
@@ -52,6 +52,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.content_handler: Optional[ContentManager] = None
         self.images = None
         self.fast_load_checker = FastLoadChecker()
+        self.icon_manager = IconManager(icon_assets_path=os.path.join(assets_path, "icons"))
 
         # Create Preview Window
         self.preview_widget = PreviewWidget(master=self)
@@ -71,7 +72,7 @@ class VisualComparisonApp(customtkinter.CTk):
             on_change_dir=self.on_change_dir,
             on_change_settings=self.on_change_settings,
         )
-        self.cb_widget = ControlButtonsWidget(master=self, callbacks=cb_callbacks)
+        self.cb_widget = ControlButtonsWidget(master=self, icon_manager=self.icon_manager, callbacks=cb_callbacks)
         self.cb_widget.populate_mode_button(VCModes, self.on_change_mode)
         self.cb_widget.set_mode(VCModes.Compare)
         self.cb_widget.grid(row=1, column=0)
@@ -143,7 +144,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def on_change_settings(self):
         self.on_pause(paused=True)
-        settings_popup = SettingsPopupWidget(self.config_path, config_info)
+        settings_popup = SettingsPopupWidget(self.config_path, config_info, self.icon_manager)
         is_cancelled, new_config = settings_popup.get_input()
 
         if is_cancelled:

@@ -1,9 +1,8 @@
-import PIL.Image
 import customtkinter
 import tkinter
 
 
-__all__ = ["shift_widget_to_root_center", "set_appearance_mode_and_theme", "load_ctk_image", "create_tool_tip"]
+__all__ = ["shift_widget_to_root_center", "set_appearance_mode_and_theme", "create_tool_tip"]
 
 
 def shift_widget_to_root_center(parent_widget, child_widget):
@@ -32,11 +31,6 @@ def set_appearance_mode_and_theme(mode: str, theme: str) -> None:
     """
     customtkinter.set_appearance_mode(mode)
     customtkinter.set_default_color_theme(theme)
-
-
-def load_ctk_image(image_path: str) -> customtkinter.CTkImage:
-    "visual_comparison/widgets/assets/copy_icon.png"
-    return customtkinter.CTkImage(PIL.Image.open(image_path))
 
 
 class ToolTip(object):
