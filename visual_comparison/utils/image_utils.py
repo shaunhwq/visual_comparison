@@ -233,5 +233,5 @@ def _image_to_clipboard_linux(image: np.array):
     pil_img = Image.fromarray(rgb_copy)
     # Save the image as binary data
     with BytesIO() as buffer:
-        pil_img.save(buffer, format="BMP")
+        pil_img.save(buffer, format="PNG")
         klembord.set({"image/png": buffer.getvalue()})
