@@ -16,7 +16,7 @@ from .managers import ZoomManager, ContentManager, VideoWriter, FastLoadChecker,
 from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
 from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup, ExportVideoPopup, ExportSelectionPopup, ProgressBarPopup, SettingsPopupWidget
 from .enums import VCModes, VCState
-from .utils import image_utils, set_appearance_mode_and_theme, file_reader
+from .utils import image_utils, set_appearance_mode_and_theme, file_reader, is_window_in_background
 from .configurations import read_config, parse_config, config_info
 
 
@@ -667,8 +667,8 @@ class VisualComparisonApp(customtkinter.CTk):
         :param start_time: time.time() from start of self.display
         :return: Time to sleep in ms
         """
-        out_of_focus = self.focus_get() is None
-        if out_of_focus and self.configurations["Functionality"]["reduce_cpu_usage_in_background"]:
+        in_background = is_window_in_background(self)
+        if in_background and self.configurations["Functionality"]["reduce_cpu_usage_in_background"]:
             return 500
 
         # Calculate T = 1/f, time budget for video playback

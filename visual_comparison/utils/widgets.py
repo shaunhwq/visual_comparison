@@ -2,7 +2,7 @@ import customtkinter
 import tkinter
 
 
-__all__ = ["shift_widget_to_root_center", "set_appearance_mode_and_theme", "create_tool_tip"]
+__all__ = ["shift_widget_to_root_center", "set_appearance_mode_and_theme", "create_tool_tip", "is_window_in_background"]
 
 
 def shift_widget_to_root_center(parent_widget, child_widget):
@@ -66,3 +66,7 @@ def create_tool_tip(widget, text):
     tool_tip = ToolTip(widget)
     widget.bind('<Enter>', lambda event: tool_tip.showtip(text))
     widget.bind('<Leave>', lambda event: tool_tip.hidetip())
+
+
+def is_window_in_background(window):
+    return window.focus_displayof() is None
