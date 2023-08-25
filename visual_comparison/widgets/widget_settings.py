@@ -75,8 +75,8 @@ class SettingsPopupWidget(customtkinter.CTkToplevel):
         self.return_value = None
         self.cancelled = True
 
-        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
+        self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
     def on_restore_all_to_defaults(self):
