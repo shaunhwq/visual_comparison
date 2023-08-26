@@ -69,4 +69,7 @@ def create_tool_tip(widget, text):
 
 
 def is_window_in_background(window):
-    return window.focus_displayof() is None
+    try:
+        return window.focus_displayof() is None
+    except KeyError as e:
+        return True
