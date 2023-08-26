@@ -419,7 +419,6 @@ class VisualComparisonApp(customtkinter.CTk):
 
         if export_format == "Image":
             self.export_image()
-            self.focus_get()
             return
         if export_format != "Video":
             raise NotImplementedError(f"Unknown option when selecting export options: {export_format}")
