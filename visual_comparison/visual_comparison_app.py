@@ -633,19 +633,19 @@ class VisualComparisonApp(customtkinter.CTk):
         cv2.circle(img_to_write, self.display_handler.mouse_position, 4, (0, 0, 0), -1)
         cv2.circle(img_to_write, self.display_handler.mouse_position, 2, (255, 255, 255), -1)
 
-        video_position, video_length, _ = self.content_handler.get_video_position()
-
-        # Write video frame on image
-        if self.content_handler.has_video() and self.video_writer_options.get("render_playback_bar", None):
-            h, w = img_to_write.shape[: 2]
-            cv2.line(img_to_write, (0, h - 2), (w, h - 2), (0, 0, 0), 5)
-            cv2.line(img_to_write, (0, h - 2), (int(w * video_position / video_length), h - 2), (255, 255, 255), 3)
-
-        # Show playback progress on video
-        if self.content_handler.has_video() and self.video_writer_options.get("render_video_frames_num", None):
+        if self.content_handler.has_video():
             video_position, video_length, _ = self.content_handler.get_video_position()
-            image_utils.put_text(img_to_write, str(video_position), image_utils.TextPosition.MIDDLE_LEFT, fg_color=(255, 255, 255))
-            image_utils.put_text(img_to_write, str(video_length), image_utils.TextPosition.MIDDLE_RIGHT, fg_color=(255, 255, 255))
+
+            # Write video frame on image
+            if self.video_writer_options.get("render_playback_bar", None):
+                h, w = img_to_write.shape[: 2]
+                cv2.line(img_to_write, (0, h - 2), (w, h - 2), (0, 0, 0), 5)
+                cv2.line(img_to_write, (0, h - 2), (int(w * video_position / video_length), h - 2), (255, 255, 255), 3)
+
+            # Show playback progress on video
+            if self.video_writer_options.get("render_video_frames_num", None):
+                image_utils.put_text(img_to_write, str(video_position), image_utils.TextPosition.MIDDLE_LEFT, fg_color=(255, 255, 255))
+                image_utils.put_text(img_to_write, str(video_length), image_utils.TextPosition.MIDDLE_RIGHT, fg_color=(255, 255, 255))
 
         ret = self.video_writer.write_image(img_to_write)
         if not ret:

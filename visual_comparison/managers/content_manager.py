@@ -153,7 +153,7 @@ class ContentManager:
 
     def get_video_position(self):
         if not self.has_video():
-            return 0
+            raise RuntimeError("Should not be calling this when there are no videos")
 
         cap = self.content_loaders[self.video_indices[0]]
         video_position = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
