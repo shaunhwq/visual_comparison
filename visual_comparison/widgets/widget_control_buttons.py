@@ -81,13 +81,6 @@ class ControlButtonsWidget(customtkinter.CTkFrame):
         self.modes_button.set(mode_enum.name)
 
     def toggle_export_button(self):
-        text = self.button_export.cget("text")
-
-        if text == "Export":
-            text, fg_color = "Stop", "red"
-        elif text == "Stop":
-            text, fg_color = "Export", self.default_button_color
-        else:
-            raise NotImplementedError(f"Unknown export button text: {text}")
-
-        self.button_export.configure(text=text, fg_color=fg_color)
+        color = self.button_export.cget("fg_color")
+        new_color = "red" if self.default_button_color == color else self.default_button_color
+        self.button_export.configure(fg_color=new_color)

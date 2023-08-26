@@ -47,10 +47,19 @@ class PreviewWidget(customtkinter.CTkFrame):
         self.canvas_viewport.grid(row=0, sticky="nsew")
 
     def _bound_to_mousewheel(self, event):
-        self.canvas_viewport.bind_all("<MouseWheel>", self._on_mousewheel)
+        if self.tk.call("tk", "windowingsystem") == "x11":
+            self.canvas_viewport.bind_all("<Button-4>", self._on_mousewheel)
+            self.canvas_viewport.bind_all("<Button-5>", self._on_mousewheel)
+        else:
+            self.canvas_viewport.bind_all("<MouseWheel>", self._on_mousewheel)
 
     def _unbound_to_mousewheel(self, event):
         self.canvas_viewport.unbind_all("<MouseWheel>")
+        if self.tk.call("tk", "windowingsystem") == "x11":
+            self.canvas_viewport.unbind_all("<Button-4>")
+            self.canvas_viewport.unbind_all("<Button-5>")
+        else:
+            self.canvas_viewport.unbind_all("<MouseWheel>")
 
     def populate_preview_window(self, images: List[np.array], callback) -> None:
         """
@@ -146,6 +155,12 @@ class PreviewWidget(customtkinter.CTkFrame):
     def _on_mousewheel(self, *args):
         if isinstance(args[0], tkinter.Event):
             event = args[0]
+
+            if event.num == 4:
+                event.delta = 1
+            if event.num == 5:
+                event.delta = -1
+
             direction = "left" if event.delta * -1 < 0 else "right"
             view_min, view_max = self.canvas_viewport.xview()
 

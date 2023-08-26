@@ -68,8 +68,8 @@ class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
         self.return_value = []
         self.cancelled = True
 
-        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
+        self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
     def _on_checkbox_checked(self):
@@ -141,8 +141,8 @@ class FilterRangePopup(customtkinter.CTkToplevel):
         equals_ok_button = customtkinter.CTkButton(equals_tab, command=lambda: self.on_ok_pressed("Equals"), text="Ok")
         equals_ok_button.grid(row=2, column=0, columnspan=2, pady=5)
 
-        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
+        self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
     def on_ok_pressed(self, tab):
@@ -199,8 +199,8 @@ class FilterTextPopup(customtkinter.CTkToplevel):
         confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm)
         confirm_button.grid(row=2, column=0)
 
-        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
+        self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
     def on_confirm(self):
@@ -276,8 +276,8 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         self.return_value = []
         self.cancelled = True
 
-        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
+        self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
     def child_values(self, child):
@@ -409,8 +409,8 @@ class GetNumberBetweenRangePopup(customtkinter.CTkToplevel):
         self.return_value = None
         self.cancelled = True
 
-        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
+        self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
     def on_confirm(self):
@@ -470,8 +470,8 @@ class RootSelectionPopup(customtkinter.CTkToplevel):
         self.cancelled = True
         self.return_value = []
 
-        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
+        self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
         if selected_folder is not None and root is None:
@@ -598,8 +598,8 @@ class ExportVideoPopup(customtkinter.CTkToplevel):
         self.cancelled = True
         self.return_value = {}
 
-        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
+        self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
     def on_export_options_changed(self, value):
@@ -662,8 +662,8 @@ class ExportSelectionPopup(customtkinter.CTkToplevel):
         self.cancelled = True
         self.return_value = None
 
-        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
+        self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
     def on_confirm(self):
@@ -691,8 +691,8 @@ class ProgressBarPopup(customtkinter.CTkToplevel):
         self.progress_bar = customtkinter.CTkProgressBar(self, width=200)
         self.progress_bar.grid(row=2, column=0)
 
-        self.grab_set()  # make other windows not clickable
         self.update_idletasks()
+        self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
     def update_widget(self, n):
