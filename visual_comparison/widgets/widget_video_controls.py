@@ -55,4 +55,5 @@ class VideoControlsWidget(customtkinter.CTkFrame):
         if len(self.last_called) > 15:
             self.last_called.pop(0)
         playback_fps = self.get_playback_fps()
-        self.label_fps.configure(text=f"Vid: {round(video_fps, 1)}fps | Play: {round(playback_fps, 1)}fps")
+        label_string = f"Vid:{str(round(video_fps, 1)).rjust(5)}fps | Play:{str(round(playback_fps, 1)).rjust(5)}fps"
+        self.label_fps.configure(text=label_string)
