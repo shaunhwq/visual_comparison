@@ -72,7 +72,12 @@ class VisualComparisonApp(customtkinter.CTk):
             on_change_dir=self.on_change_dir,
             on_change_settings=self.on_change_settings,
         )
-        self.cb_widget = ControlButtonsWidget(master=self, icon_manager=self.icon_manager, callbacks=cb_callbacks)
+        self.cb_widget = ControlButtonsWidget(
+            master=self,
+            icon_manager=self.icon_manager,
+            callbacks=cb_callbacks,
+            ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"]
+        )
         self.cb_widget.populate_mode_button(VCModes, self.on_change_mode)
         self.cb_widget.set_mode(VCModes.Compare)
         self.cb_widget.grid(row=1, column=0)
@@ -84,7 +89,11 @@ class VisualComparisonApp(customtkinter.CTk):
             on_specify_frame_no=self.on_specify_frame_no,
             on_change_playback_rate=self.on_change_playback_rate,
         )
-        self.video_controls = VideoControlsWidget(master=self, callbacks=vc_callbacks)
+        self.video_controls = VideoControlsWidget(
+            master=self,
+            callbacks=vc_callbacks,
+            ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"],
+        )
         self.video_writer = None  # For exporting video (custom)
         self.video_writer_options = {}
 
@@ -112,7 +121,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.bind_methods_to_keys()
 
     def load_content(self):
-        popup = RootSelectionPopup(self.root, self.preview_folder)
+        popup = RootSelectionPopup(self.root, self.preview_folder, self.configurations["Display"]["ctk_corner_radius"])
         cancelled, ret_vals = popup.get_input()
         if cancelled:
             return False
@@ -121,11 +130,11 @@ class VisualComparisonApp(customtkinter.CTk):
         content_handler = ContentManager(root=root_folder, preview_folder=preview_folder)
 
         if len(content_handler.methods) <= 1:
-            msg_popup = MessageBoxPopup("Root folder must contain more than 1 sub folder")
+            msg_popup = MessageBoxPopup("Root folder must contain more than 1 sub folder", self.configurations["Display"]["ctk_corner_radius"])
             msg_popup.wait()
             return False
         if len(content_handler.files) == 0:
-            msg_popup = MessageBoxPopup("There are no common files in all sub folders")
+            msg_popup = MessageBoxPopup("There are no common files in all sub folders", self.configurations["Display"]["ctk_corner_radius"])
             msg_popup.wait()
             return False
 
@@ -144,7 +153,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def on_change_settings(self):
         self.on_pause(paused=True)
-        settings_popup = SettingsPopupWidget(self.config_path, config_info, self.icon_manager)
+        settings_popup = SettingsPopupWidget(self.config_path, config_info, self.icon_manager, self.configurations["Display"]["ctk_corner_radius"])
         is_cancelled, new_config = settings_popup.get_input()
 
         if is_cancelled:
@@ -239,14 +248,14 @@ class VisualComparisonApp(customtkinter.CTk):
     def on_select_methods(self):
         self.on_pause(paused=True)
 
-        popup = MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods)
+        popup = MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods, ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"])
         is_cancelled, new_methods = popup.get_input()
 
         if is_cancelled:
             return
 
         if len(new_methods) < 2:
-            msg_popup = MessageBoxPopup("Please select more than 2 methods")
+            msg_popup = MessageBoxPopup("Please select more than 2 methods", self.configurations["Display"]["ctk_corner_radius"])
             msg_popup.wait()
             return
         self.content_handler.current_methods = new_methods
@@ -266,14 +275,14 @@ class VisualComparisonApp(customtkinter.CTk):
         titles = self.content_handler.data_titles[: num_titles]
 
         # Get data from popup
-        popup = DataSelectionPopup(self.content_handler.data, column_titles=titles, text_width=text_width)
+        popup = DataSelectionPopup(self.content_handler.data, column_titles=titles, text_width=text_width, ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"])
         is_cancelled, rows = popup.get_input()
 
         if is_cancelled:
             return
 
         if len(rows) == 0:
-            msg_popup = MessageBoxPopup("No items selected. Ignoring selection")
+            msg_popup = MessageBoxPopup("No items selected. Ignoring selection", self.configurations["Display"]["ctk_corner_radius"])
             msg_popup.wait()
             return
 
@@ -307,7 +316,8 @@ class VisualComparisonApp(customtkinter.CTk):
             title="Specify frame number",
             desired_type=int,
             lower_bound=0,
-            upper_bound=total_num_frames
+            upper_bound=total_num_frames,
+            ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"]
         )
         is_cancelled, desired_frame_no = popup.get_input()
         if is_cancelled:
@@ -342,6 +352,7 @@ class VisualComparisonApp(customtkinter.CTk):
                 desired_type=int,
                 lower_bound=0,
                 upper_bound=upper_bound,
+                ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"]
             )
             is_cancelled, index = popup.get_input()
             if is_cancelled:
@@ -351,7 +362,7 @@ class VisualComparisonApp(customtkinter.CTk):
         ret = self.content_handler.on_specify_index(value=index)
         if not ret:
             message = f"Index {index} not in range [0, {upper_bound}]"
-            msg_popup = MessageBoxPopup(message)
+            msg_popup = MessageBoxPopup(message, self.configurations["Display"]["ctk_corner_radius"])
             msg_popup.wait()
             return
 
@@ -401,7 +412,7 @@ class VisualComparisonApp(customtkinter.CTk):
         :return: None
         """
         if not hasattr(self, "display_image"):
-            msg_popup = MessageBoxPopup("self.display_image does not exist")
+            msg_popup = MessageBoxPopup("self.display_image does not exist", self.configurations["Display"]["ctk_corner_radius"])
             msg_popup.wait()
             return
 
@@ -412,7 +423,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
         self.on_pause(paused=True)
 
-        export_select_popup = ExportSelectionPopup()
+        export_select_popup = ExportSelectionPopup(self.configurations["Display"]["ctk_corner_radius"])
         is_cancelled, export_format = export_select_popup.get_input()
         if is_cancelled:
             return
@@ -434,6 +445,7 @@ class VisualComparisonApp(customtkinter.CTk):
             img_width=width,
             img_height=height,
             video_fps=video_fps if self.content_handler.has_video() else self.configurations["Functionality"]["max_fps"],
+            ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"],
         )
         is_cancelled, video_export_options = export_video_popup.get_input()
         if is_cancelled:
@@ -443,7 +455,7 @@ class VisualComparisonApp(customtkinter.CTk):
         export_path = video_export_options["export_path"]
         if export_type == "Fixed (Concatenated)":
             if not self.content_handler.has_video():
-                msg_popup = MessageBoxPopup("Current file is not a video, can't export in Concatenate mode")
+                msg_popup = MessageBoxPopup("Current file is not a video, can't export in Concatenate mode", self.configurations["Display"]["ctk_corner_radius"])
                 msg_popup.wait()
                 self.focus_get()
                 return
@@ -465,14 +477,14 @@ class VisualComparisonApp(customtkinter.CTk):
         try:
             cv2.imwrite(dialog_result.name, self.display_image)
         except cv2.error as e:
-            msg_popup = MessageBoxPopup(e)
+            msg_popup = MessageBoxPopup(e, self.configurations["Display"]["ctk_corner_radius"])
             msg_popup.wait()
 
     def export_fixed_video(self, file_path):
         # Check video extension
         file_extension = os.path.splitext(file_path)[-1]
         if file_extension != ".mp4":
-            msg_popup = MessageBoxPopup(f"Unsupported file extension: {file_extension}")
+            msg_popup = MessageBoxPopup(f"Unsupported file extension: {file_extension}", self.configurations["Display"]["ctk_corner_radius"])
             msg_popup.wait()
             return
 
@@ -649,7 +661,7 @@ class VisualComparisonApp(customtkinter.CTk):
         ret = self.video_writer.write_image(img_to_write)
         if not ret:
             self.reset_video_writer()
-            msg_popup = MessageBoxPopup("Video writing stopped because image size has changed")
+            msg_popup = MessageBoxPopup("Video writing stopped because image size has changed", self.configurations["Display"]["ctk_corner_radius"])
             msg_popup.wait()
 
         # Inform user that it is still recording

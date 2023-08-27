@@ -39,15 +39,16 @@ ttk._convert_stringval = _convert_stringval
 
 
 class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
-    def __init__(self, all_options, current_options):
+    def __init__(self, all_options, current_options, ctk_corner_radius):
         """
         :param all_options: All possible options
         :param current_options: Currently selected options
+        :param ctk_corner_radius: corner_radius to use for customtkinter widgets
         """
         super().__init__()
-        reset_button = customtkinter.CTkButton(master=self, text="Reset", command=self._on_reset_pressed)
+        reset_button = customtkinter.CTkButton(master=self, text="Reset", command=self._on_reset_pressed, corner_radius=ctk_corner_radius)
         reset_button.pack(padx=5, pady=5)
-        ok_button = customtkinter.CTkButton(master=self, text="Confirm", command=self._on_ok_pressed)
+        ok_button = customtkinter.CTkButton(master=self, text="Confirm", command=self._on_ok_pressed, corner_radius=ctk_corner_radius)
         ok_button.pack(padx=5, pady=5)
 
         # Sort by current methods then remainder
@@ -59,7 +60,7 @@ class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
 
         self.checkboxes = []
         for i, method_name in enumerate(sorted_methods):
-            checkbox = customtkinter.CTkCheckBox(master=self, text=method_name, command=self._on_checkbox_checked, onvalue=i + 1, offvalue=0)
+            checkbox = customtkinter.CTkCheckBox(master=self, text=method_name, command=self._on_checkbox_checked, onvalue=i + 1, offvalue=0, corner_radius=ctk_corner_radius)
             checkbox.pack()
             if i < len(current_options):
                 checkbox.select()
@@ -104,7 +105,7 @@ class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
 
 
 class FilterRangePopup(customtkinter.CTkToplevel):
-    def __init__(self, title, values):
+    def __init__(self, title, values, ctk_corner_radius):
         super().__init__()
         self.values = values
 
@@ -119,7 +120,7 @@ class FilterRangePopup(customtkinter.CTkToplevel):
         title_label = customtkinter.CTkLabel(self, text=title)
         title_label.grid(row=1, column=0, sticky="nsew")
 
-        tabview = customtkinter.CTkTabview(self, height=100, width=300)
+        tabview = customtkinter.CTkTabview(self, height=100, width=300, corner_radius=ctk_corner_radius)
         tabview.grid(row=2, column=0, padx=20, pady=(5, 20), sticky="nsew")
         tabview.columnconfigure(0, weight=1)
         tabview.add("Range")
@@ -128,17 +129,17 @@ class FilterRangePopup(customtkinter.CTkToplevel):
         tabview.tab("Equals").grid_columnconfigure(0, weight=1)
 
         range_tab = tabview.tab("Range")
-        self.lower_text_box = customtkinter.CTkEntry(range_tab, placeholder_text="Lower bound")
+        self.lower_text_box = customtkinter.CTkEntry(range_tab, placeholder_text="Lower bound", corner_radius=ctk_corner_radius)
         self.lower_text_box.grid(row=0, column=0)
-        self.upper_text_box = customtkinter.CTkEntry(range_tab, placeholder_text="Upper bound")
+        self.upper_text_box = customtkinter.CTkEntry(range_tab, placeholder_text="Upper bound", corner_radius=ctk_corner_radius)
         self.upper_text_box.grid(row=0, column=1)
-        range_ok_button = customtkinter.CTkButton(range_tab, command=lambda: self.on_ok_pressed("Range"), text="Ok")
+        range_ok_button = customtkinter.CTkButton(range_tab, command=lambda: self.on_ok_pressed("Range"), text="Ok", corner_radius=ctk_corner_radius)
         range_ok_button.grid(row=2, column=0, columnspan=2, pady=5)
 
         equals_tab = tabview.tab("Equals")
-        self.equals_text_box = customtkinter.CTkEntry(equals_tab, placeholder_text="Equals to")
+        self.equals_text_box = customtkinter.CTkEntry(equals_tab, placeholder_text="Equals to", corner_radius=ctk_corner_radius)
         self.equals_text_box.grid(row=0, column=0)
-        equals_ok_button = customtkinter.CTkButton(equals_tab, command=lambda: self.on_ok_pressed("Equals"), text="Ok")
+        equals_ok_button = customtkinter.CTkButton(equals_tab, command=lambda: self.on_ok_pressed("Equals"), text="Ok", corner_radius=ctk_corner_radius)
         equals_ok_button.grid(row=2, column=0, columnspan=2, pady=5)
 
         self.update_idletasks()
@@ -175,7 +176,7 @@ class FilterRangePopup(customtkinter.CTkToplevel):
 
 
 class FilterTextPopup(customtkinter.CTkToplevel):
-    def __init__(self, display_text, strings_to_filter, *args, **kwargs):
+    def __init__(self, display_text, strings_to_filter, ctk_corner_radius, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title("Filter Text")
 
@@ -190,13 +191,13 @@ class FilterTextPopup(customtkinter.CTkToplevel):
         label = customtkinter.CTkLabel(selection_frame, text="Select where")
         label.grid(row=0, column=0)
         condition = ["contains", "does not contain", "matches"]
-        self.condition_combo_box = customtkinter.CTkComboBox(selection_frame, values=condition)
+        self.condition_combo_box = customtkinter.CTkComboBox(selection_frame, values=condition, corner_radius=ctk_corner_radius)
         self.condition_combo_box.grid(row=0, column=1)
-        self.entry_box = customtkinter.CTkEntry(selection_frame)
+        self.entry_box = customtkinter.CTkEntry(selection_frame, corner_radius=ctk_corner_radius)
         self.entry_box.grid(row=0, column=2)
         selection_frame.grid(row=1, column=0)
 
-        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm)
+        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm, corner_radius=ctk_corner_radius)
         confirm_button.grid(row=2, column=0)
 
         self.update_idletasks()
@@ -227,11 +228,12 @@ class FilterTextPopup(customtkinter.CTkToplevel):
 
 
 class DataSelectionPopup(customtkinter.CTkToplevel):
-    def __init__(self, data: List[List], column_titles: List[str], text_width=400, number_width=50, *args, **kwargs):
+    def __init__(self, data: List[List], column_titles: List[str], ctk_corner_radius, text_width=400, number_width=50, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data = list(data)
         self.column_titles = column_titles
         self.data_types = [type(val) for val in data[0]]
+        self.ctk_corner_radius = ctk_corner_radius
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -259,18 +261,18 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
 
         # Feature buttons
         option_frame = customtkinter.CTkFrame(self)
-        remove_row_button = customtkinter.CTkButton(option_frame, text="Remove Row", command=self.on_remove_row, height=25, width=75)
+        remove_row_button = customtkinter.CTkButton(option_frame, text="Remove Row", command=self.on_remove_row, height=25, width=75, corner_radius=ctk_corner_radius)
         remove_row_button.grid(row=1, column=0, padx=2, rowspan=2)
         col_option_label = customtkinter.CTkLabel(option_frame, text="Filter By:", height=25)
         col_option_label.grid(row=0, column=1, padx=2)
-        self.col_options = customtkinter.CTkOptionMenu(option_frame, values=self.column_titles, command=self.filter_options, height=25, width=75)
+        self.col_options = customtkinter.CTkOptionMenu(option_frame, values=self.column_titles, command=self.filter_options, height=25, width=75, corner_radius=ctk_corner_radius)
         self.col_options.grid(row=1, column=1, padx=2)
 
-        reset_button = customtkinter.CTkButton(option_frame, text="Reset", command=self.on_reset, height=25, width=75)
+        reset_button = customtkinter.CTkButton(option_frame, text="Reset", command=self.on_reset, height=25, width=75, corner_radius=ctk_corner_radius)
         reset_button.grid(row=1, column=2, padx=2, rowspan=2)
         option_frame.grid(row=1, column=0, pady=5, padx=5)
 
-        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm, height=25)
+        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm, height=25, corner_radius=ctk_corner_radius)
         confirm_button.grid(row=2, column=0, pady=(0, 5))
 
         self.return_value = []
@@ -302,10 +304,10 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
 
         self.grab_release()
         if data_type is int or data_type is float:
-            popup = FilterRangePopup(f"Filtering {column}:", data_to_filter)
+            popup = FilterRangePopup(f"Filtering {column}:", data_to_filter, self.ctk_corner_radius)
             is_cancelled, idxs = popup.get_input()
         elif data_type is str:
-            popup = FilterTextPopup(f"Column: {column}", data_to_filter)
+            popup = FilterTextPopup(f"Column: {column}", data_to_filter, self.ctk_corner_radius)
             is_cancelled, idxs = popup.get_input()
         else:
             raise NotImplementedError(f"Filtering option for data type {data_type} is not implemented")
@@ -352,13 +354,13 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
 
 
 class MessageBoxPopup(customtkinter.CTkToplevel):
-    def __init__(self, message, title="Warning", display_time_ms=3000, *args, **kwargs):
+    def __init__(self, message, ctk_corner_radius, title="Warning", display_time_ms=3000, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title(title)
 
         label = customtkinter.CTkLabel(self, wraplength=300, text=message)
         label.grid(row=0, column=0, padx=20, pady=20)
-        self.close_button = customtkinter.CTkButton(self, command=self.destroy)
+        self.close_button = customtkinter.CTkButton(self, command=self.destroy, corner_radius=ctk_corner_radius)
         self.close_button.grid(row=1, column=0, pady=(0, 20))
 
         self.display_time_ms = display_time_ms
@@ -387,7 +389,7 @@ class MessageBoxPopup(customtkinter.CTkToplevel):
 
 
 class GetNumberBetweenRangePopup(customtkinter.CTkToplevel):
-    def __init__(self, text, title, desired_type, lower_bound=float("-inf"), upper_bound=float("inf"), *args, **kwargs):
+    def __init__(self, text, title, desired_type, ctk_corner_radius, lower_bound=float("-inf"), upper_bound=float("inf"), *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title(title)
         if not (desired_type is int or desired_type is float):
@@ -396,14 +398,15 @@ class GetNumberBetweenRangePopup(customtkinter.CTkToplevel):
         self.desired_type = desired_type
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
+        self.ctk_corner_radius = ctk_corner_radius
 
         prompt_label = customtkinter.CTkLabel(self, text=text, wraplength=300)
         prompt_label.grid(row=0, column=0, columnspan=2, padx=20, pady=20)
-        self.entry = customtkinter.CTkEntry(self)
+        self.entry = customtkinter.CTkEntry(self, corner_radius=ctk_corner_radius)
         self.entry.grid(row=1, column=0, columnspan=2, padx=20, pady=(0, 20))
-        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm)
+        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm, corner_radius=ctk_corner_radius)
         confirm_button.grid(row=2, column=0, padx=20, pady=(0, 20))
-        cancel_button = customtkinter.CTkButton(self, text="Cancel", command=self.destroy)
+        cancel_button = customtkinter.CTkButton(self, text="Cancel", command=self.destroy, corner_radius=ctk_corner_radius)
         cancel_button.grid(row=2, column=1, padx=(0, 20), pady=(0, 20))
 
         self.return_value = None
@@ -419,7 +422,7 @@ class GetNumberBetweenRangePopup(customtkinter.CTkToplevel):
 
         if not ret:
             self.grab_release()
-            msg_popup = MessageBoxPopup(f"Unable to cast '{user_input}' to {self.desired_type.__name__}")
+            msg_popup = MessageBoxPopup(f"Unable to cast '{user_input}' to {self.desired_type.__name__}", self.ctk_corner_radius)
             msg_popup.wait()
             self.grab_set()
             return
@@ -427,7 +430,7 @@ class GetNumberBetweenRangePopup(customtkinter.CTkToplevel):
         # Check valid index
         if not (self.lower_bound <= value <= self.upper_bound):
             self.grab_release()
-            msg_popup = MessageBoxPopup(f"Index {value} not in range [{self.lower_bound}, {self.upper_bound}]")
+            msg_popup = MessageBoxPopup(f"Index {value} not in range [{self.lower_bound}, {self.upper_bound}]", self.ctk_corner_radius)
             msg_popup.wait()
             self.grab_set()
             return
@@ -442,10 +445,11 @@ class GetNumberBetweenRangePopup(customtkinter.CTkToplevel):
 
 
 class RootSelectionPopup(customtkinter.CTkToplevel):
-    def __init__(self, root=None, selected_folder=None, *args, **kwargs):
+    def __init__(self, root=None, selected_folder=None, ctk_corner_radius=3, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.columnconfigure(0, weight=1)
         self.title("Select root folder and folder for preview")
+        self.ctk_corner_radius = ctk_corner_radius
 
         tree_frame = customtkinter.CTkFrame(self, width=500)
         # Create Tree for display
@@ -464,7 +468,7 @@ class RootSelectionPopup(customtkinter.CTkToplevel):
 
         tree_frame.columnconfigure(0, weight=1)
 
-        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm)
+        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm, corner_radius=ctk_corner_radius)
         confirm_button.grid(row=1, column=0, padx=20, pady=20)
 
         self.cancelled = True
@@ -533,7 +537,7 @@ class RootSelectionPopup(customtkinter.CTkToplevel):
 
     def create_popup(self, text):
         self.grab_release()
-        msg_popup = MessageBoxPopup(text)
+        msg_popup = MessageBoxPopup(text, self.ctk_corner_radius)
         msg_popup.wait()
         self.grab_set()
 
@@ -543,55 +547,56 @@ class RootSelectionPopup(customtkinter.CTkToplevel):
 
 
 class ExportVideoPopup(customtkinter.CTkToplevel):
-    def __init__(self, file_name, img_width, img_height, video_fps=None, *args, **kwargs):
+    def __init__(self, file_name, img_width, img_height, ctk_corner_radius, video_fps=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.columnconfigure(0, weight=1)
         self.title("File Export Configuration")
+        self.ctk_corner_radius = ctk_corner_radius
 
         max_length = max(len(file_name), len(os.getcwd()))
         text_width = int(400./55 * max_length) + 25  # Number of pixels for width
 
         folder_label = customtkinter.CTkLabel(self, width=80, height=25, text="Folder:", anchor="w")
         folder_label.grid(row=0, column=0, pady=(20, 0), padx=10)
-        self.folder_button = customtkinter.CTkButton(self, width=text_width, height=25, text=os.getcwd(), command=self.on_change_dir)
+        self.folder_button = customtkinter.CTkButton(self, width=text_width, height=25, text=os.getcwd(), command=self.on_change_dir, corner_radius=ctk_corner_radius)
         self.folder_button.grid(row=0, column=1, pady=(20, 0), padx=10)
 
         file_label = customtkinter.CTkLabel(self, width=80, height=25, text="File name:", anchor="w")
         file_label.grid(row=1, column=0, padx=10)
-        self.file_name_entry = customtkinter.CTkEntry(self, width=text_width, height=25)
+        self.file_name_entry = customtkinter.CTkEntry(self, width=text_width, height=25, corner_radius=ctk_corner_radius)
         self.file_name_entry.insert(0, file_name)
         self.file_name_entry.grid(row=1, column=1, padx=10)
 
         dimensions_label = customtkinter.CTkLabel(self, width=80, height=25, text="Dimensions:", anchor="w")
         dimensions_label.grid(row=2, column=0, padx=10)
-        dimensions_text = customtkinter.CTkEntry(self, width=text_width, height=25)
+        dimensions_text = customtkinter.CTkEntry(self, width=text_width, height=25, corner_radius=ctk_corner_radius)
         dimensions_text.insert(0, f"{img_width}(width) x {img_height}(height)")
         dimensions_text.grid(row=2, column=1, padx=10)
         dimensions_text.configure(state="disabled")
 
         fps_label = customtkinter.CTkLabel(self, width=80, height=25, text="FPS:", anchor="w")
         fps_label.grid(row=3, column=0, padx=10)
-        self.fps_entry = customtkinter.CTkEntry(self, width=text_width, height=25)
+        self.fps_entry = customtkinter.CTkEntry(self, width=text_width, height=25, corner_radius=ctk_corner_radius)
         self.fps_entry.insert(0, str(video_fps) if video_fps is not None else "Not Applicable")
         self.fps_entry.grid(row=3, column=1, padx=10)
 
         export_type_label = customtkinter.CTkLabel(self, width=80, height=25, text="Export Type:", anchor="w")
         export_type_label.grid(row=4, column=0, padx=10)
-        self.export_options = customtkinter.CTkOptionMenu(self, width=text_width, height=25, values=["Fixed (Concatenated)", "Custom"], command=self.on_export_options_changed)
+        self.export_options = customtkinter.CTkOptionMenu(self, width=text_width, height=25, values=["Fixed (Concatenated)", "Custom"], command=self.on_export_options_changed, corner_radius=ctk_corner_radius)
         self.export_options.grid(row=4, column=1, padx=10)
 
         other_options_label = customtkinter.CTkLabel(self, width=80, height=25, text="Other Options:", anchor="w")
         other_options_label.grid(row=5, column=0, padx=10)
         self.checkbox_options_frame = customtkinter.CTkFrame(self)
-        self.render_video_frames_num_checkbox = customtkinter.CTkCheckBox(self.checkbox_options_frame, text_width // 2, height=25, text="Render Video Frame Num")
+        self.render_video_frames_num_checkbox = customtkinter.CTkCheckBox(self.checkbox_options_frame, text_width // 2, height=25, text="Render Video Frame Num", corner_radius=ctk_corner_radius)
         self.render_video_frames_num_checkbox.grid(row=0, column=1)
-        self.render_playback_bar_checkbox = customtkinter.CTkCheckBox(self.checkbox_options_frame, text_width // 2, height=25, text="Render Playback Bar")
+        self.render_playback_bar_checkbox = customtkinter.CTkCheckBox(self.checkbox_options_frame, text_width // 2, height=25, text="Render Playback Bar", corner_radius=ctk_corner_radius)
         self.render_playback_bar_checkbox.grid(row=0, column=2)
 
         exit_buttons_frame = customtkinter.CTkFrame(self)
-        cancel_button = customtkinter.CTkButton(exit_buttons_frame, height=25, width=50, text="Cancel", command=self.destroy)
+        cancel_button = customtkinter.CTkButton(exit_buttons_frame, height=25, width=50, text="Cancel", command=self.destroy, corner_radius=ctk_corner_radius)
         cancel_button.grid(row=0, column=0)
-        confirm_button = customtkinter.CTkButton(exit_buttons_frame, height=25, width=50, text="Confirm", command=self.on_confirm)
+        confirm_button = customtkinter.CTkButton(exit_buttons_frame, height=25, width=50, text="Confirm", command=self.on_confirm, corner_radius=ctk_corner_radius)
         confirm_button.grid(row=0, column=1)
         exit_buttons_frame.grid(row=6, column=0, columnspan=3, pady=20)
 
@@ -619,7 +624,7 @@ class ExportVideoPopup(customtkinter.CTkToplevel):
         export_path = os.path.join(self.folder_button.cget("text"), self.file_name_entry.get()) + ".mp4"
         if os.path.exists(export_path):
             self.grab_release()
-            msg_popup = MessageBoxPopup("Path exists, please choose another name")
+            msg_popup = MessageBoxPopup("Path exists, please choose another name", self.ctk_corner_radius)
             msg_popup.wait()
             self.grab_set()
             return
@@ -646,17 +651,17 @@ class ExportVideoPopup(customtkinter.CTkToplevel):
 
 
 class ExportSelectionPopup(customtkinter.CTkToplevel):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, ctk_corner_radius, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title("Export To")
 
-        self.options = customtkinter.CTkSegmentedButton(self, values=["Image", "Video"])
+        self.options = customtkinter.CTkSegmentedButton(self, values=["Image", "Video"], corner_radius=ctk_corner_radius)
         self.options.grid(row=0, column=0, columnspan=2, padx=20, pady=20)
         self.options.set("Image")
 
-        cancel_button = customtkinter.CTkButton(self, height=25, width=50, text="Cancel", command=self.destroy)
+        cancel_button = customtkinter.CTkButton(self, height=25, width=50, text="Cancel", command=self.destroy, corner_radius=ctk_corner_radius)
         cancel_button.grid(row=1, column=0, padx=20, pady=(0, 20))
-        confirm_button = customtkinter.CTkButton(self, height=25, width=50, text="Confirm", command=self.on_confirm)
+        confirm_button = customtkinter.CTkButton(self, height=25, width=50, text="Confirm", command=self.on_confirm, corner_radius=ctk_corner_radius)
         confirm_button.grid(row=1, column=1, padx=(0, 20), pady=(0, 20))
 
         self.cancelled = True

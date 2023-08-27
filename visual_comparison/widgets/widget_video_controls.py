@@ -6,27 +6,27 @@ __all__ = ["VideoControlsWidget"]
 
 
 class VideoControlsWidget(customtkinter.CTkFrame):
-    def __init__(self, callbacks, *args, **kwargs):
+    def __init__(self, callbacks, ctk_corner_radius, *args, **kwargs):
         super().__init__(*args, **kwargs)
         height = 20
-        button_restart = customtkinter.CTkButton(master=self, width=28, height=height, text="⏮", command=lambda: callbacks["on_set_video_position"](0))
+        button_restart = customtkinter.CTkButton(master=self, width=28, height=height, text="⏮", command=lambda: callbacks["on_set_video_position"](0), corner_radius=ctk_corner_radius)
         button_restart.grid(row=0, column=0, padx=2)
-        button_minus_10 = customtkinter.CTkButton(master=self, width=28, height=height, text="-10", command=lambda: callbacks["on_set_video_position"](-10, relative=True))
+        button_minus_10 = customtkinter.CTkButton(master=self, width=28, height=height, text="-10", command=lambda: callbacks["on_set_video_position"](-10, relative=True), corner_radius=ctk_corner_radius)
         button_minus_10.grid(row=0, column=1, padx=2)
-        button_minus_1 = customtkinter.CTkButton(master=self, width=28, height=height, text="-1", command=lambda: callbacks["on_set_video_position"](-1, relative=True))
+        button_minus_1 = customtkinter.CTkButton(master=self, width=28, height=height, text="-1", command=lambda: callbacks["on_set_video_position"](-1, relative=True), corner_radius=ctk_corner_radius)
         button_minus_1.grid(row=0, column=2, padx=2)
-        self.pause_button = customtkinter.CTkButton(master=self, width=28, height=height, text="⏸", command=lambda: callbacks["on_pause"]())
+        self.pause_button = customtkinter.CTkButton(master=self, width=28, height=height, text="⏸", command=lambda: callbacks["on_pause"](), corner_radius=ctk_corner_radius)
         self.pause_button.grid(row=0, column=3, padx=2)
-        button_plus_1 = customtkinter.CTkButton(master=self, width=28, height=height, text="+1", command=lambda: callbacks["on_set_video_position"](1, relative=True))
+        button_plus_1 = customtkinter.CTkButton(master=self, width=28, height=height, text="+1", command=lambda: callbacks["on_set_video_position"](1, relative=True), corner_radius=ctk_corner_radius)
         button_plus_1.grid(row=0, column=4, padx=2)
-        button_plus_10 = customtkinter.CTkButton(master=self, width=28, height=height, text="+10", command=lambda: callbacks["on_set_video_position"](10, relative=True))
+        button_plus_10 = customtkinter.CTkButton(master=self, width=28, height=height, text="+10", command=lambda: callbacks["on_set_video_position"](10, relative=True), corner_radius=ctk_corner_radius)
         button_plus_10.grid(row=0, column=5, padx=2)
         self.video_slider = customtkinter.CTkSlider(master=self, from_=0, to=100, command=lambda value: callbacks["on_set_video_position"](value, slider=True))
         self.video_slider.grid(row=0, column=6, padx=2)
-        self.button_specify_frame_no = customtkinter.CTkButton(master=self, width=75, height=height, text="Frame No:", command=lambda: callbacks["on_specify_frame_no"]())
+        self.button_specify_frame_no = customtkinter.CTkButton(master=self, width=75, height=height, text="Frame No:", command=lambda: callbacks["on_specify_frame_no"](), corner_radius=ctk_corner_radius)
         self.button_specify_frame_no.grid(row=0, column=7, padx=2)
         playback_speeds = ["1x", "1.5x", "2x", "3x", "4x", "Max"]
-        playback_button = customtkinter.CTkOptionMenu(self, width=50, height=height, values=playback_speeds, command=callbacks["on_change_playback_rate"])
+        playback_button = customtkinter.CTkOptionMenu(self, width=50, height=height, values=playback_speeds, command=callbacks["on_change_playback_rate"], corner_radius=ctk_corner_radius)
         playback_button.grid(row=0, column=8, padx=2)
         self.label_fps = customtkinter.CTkLabel(master=self, width=180, height=height)
         self.label_fps.grid(row=0, column=9, padx=2)
