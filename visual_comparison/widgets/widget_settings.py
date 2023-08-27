@@ -12,18 +12,19 @@ __all__ = ["SettingsPopupWidget"]
 
 
 class SettingsPopupWidget(customtkinter.CTkToplevel):
-    def __init__(self, configuration_path, configuration_info, icon_manager: IconManager, *args, **kwargs):
+    def __init__(self, configuration_path, configuration_info, icon_manager: IconManager, ctk_corner_radius, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title("Settings")
 
         self.configuration_path = configuration_path
         self.configuration_info = configuration_info
+        self.ctk_corner_radius = ctk_corner_radius
 
         label_width = 80
         input_obj_width = 200
         height = 25
 
-        tabview = customtkinter.CTkTabview(self, height=100, width=300)
+        tabview = customtkinter.CTkTabview(self, height=100, width=300, corner_radius=ctk_corner_radius)
         tabview.grid(row=0, column=0, padx=20, pady=(5, 20), sticky="nsew")
         tabview.columnconfigure(0, weight=1)
 
@@ -45,18 +46,26 @@ class SettingsPopupWidget(customtkinter.CTkToplevel):
 
                 desired_ctk_obj = configuration_info[section_name][key]["obj"]
                 if desired_ctk_obj == "options":
-                    ctk_obj = customtkinter.CTkOptionMenu(master=tab, width=input_obj_width, height=height, values=configuration_info[section_name][key]["values"])
+                    ctk_obj = customtkinter.CTkOptionMenu(master=tab, width=input_obj_width, height=height, values=configuration_info[section_name][key]["values"], corner_radius=ctk_corner_radius)
                     ctk_obj.set(current_configuration[section_name][key])
                     ctk_obj.grid(row=i, column=1, padx=(0, 20), pady=pady)
                 elif desired_ctk_obj == "entry":
-                    ctk_obj = customtkinter.CTkEntry(master=tab, width=input_obj_width, height=height)
+                    ctk_obj = customtkinter.CTkEntry(master=tab, width=input_obj_width, height=height, corner_radius=ctk_corner_radius)
                     ctk_obj.insert(0, current_configuration[section_name][key])
                     ctk_obj.grid(row=i, column=1, padx=(0, 20), pady=pady)
                 else:
                     raise NotImplementedError(f"Check configuration_options. Unknown obj: '{desired_ctk_obj}'")
 
                 # Set width and height to same dim to make a square button
-                reset_default_button = customtkinter.CTkButton(master=tab, width=height, height=height, image=icon_manager.restore_icon, fg_color="gray", text="", command=lambda params=(section_name, key): self.on_restore_to_default(*params))
+                reset_default_button = customtkinter.CTkButton(
+                    master=tab,
+                    width=height,
+                    height=height,
+                    image=icon_manager.restore_icon,
+                    fg_color="gray", text="",
+                    command=lambda params=(section_name, key): self.on_restore_to_default(*params),
+                    corner_radius=ctk_corner_radius,
+                )
                 reset_default_button.grid(row=i, column=2, padx=(0, 20), pady=pady)
 
                 # Write to storage for later. Use this format because it is easier
@@ -64,11 +73,11 @@ class SettingsPopupWidget(customtkinter.CTkToplevel):
 
         # Confirmation and Cancel Buttons
         button_frame = customtkinter.CTkFrame(self, height=height, width=100)
-        cancel_button = customtkinter.CTkButton(master=button_frame, height=25, width=50, text="Cancel", command=self.destroy)
+        cancel_button = customtkinter.CTkButton(master=button_frame, height=25, width=50, text="Cancel", command=self.destroy, corner_radius=ctk_corner_radius)
         cancel_button.grid(row=0, column=0, padx=20)
-        all_defaults_button = customtkinter.CTkButton(master=button_frame, height=25, width=50, text="Default (all)", command=self.on_restore_all_to_defaults)
+        all_defaults_button = customtkinter.CTkButton(master=button_frame, height=25, width=50, text="Default (all)", command=self.on_restore_all_to_defaults, corner_radius=ctk_corner_radius)
         all_defaults_button.grid(row=0, column=1, padx=(0, 20))
-        confirm_button = customtkinter.CTkButton(master=button_frame, height=25, width=50, text="Confirm", command=self.on_confirm)
+        confirm_button = customtkinter.CTkButton(master=button_frame, height=25, width=50, text="Confirm", command=self.on_confirm, corner_radius=ctk_corner_radius)
         confirm_button.grid(row=0, column=2, padx=(0, 20))
         button_frame.grid(row=1, column=0, pady=(0, 20))
 
@@ -85,7 +94,7 @@ class SettingsPopupWidget(customtkinter.CTkToplevel):
                 self.on_restore_to_default(section, key)
 
         self.grab_release()
-        msg_popup = MessageBoxPopup(f"Reset all settings to defaults")
+        msg_popup = MessageBoxPopup(f"Reset all settings to defaults", self.ctk_corner_radius)
         msg_popup.wait()
         self.grab_set()
 
@@ -116,7 +125,7 @@ class SettingsPopupWidget(customtkinter.CTkToplevel):
             parsed_config = parse_config(config_parser)
         except Exception as e:
             self.grab_release()
-            msg_popup = MessageBoxPopup(f"ValueError occurred when parsing: {e}")
+            msg_popup = MessageBoxPopup(f"ValueError occurred when parsing: {e}", self.ctk_corner_radius)
             msg_popup.wait()
             self.grab_set()
             return
