@@ -404,10 +404,10 @@ class GetNumberBetweenRangePopup(customtkinter.CTkToplevel):
         prompt_label.grid(row=0, column=0, columnspan=2, padx=20, pady=20)
         self.entry = customtkinter.CTkEntry(self, corner_radius=ctk_corner_radius)
         self.entry.grid(row=1, column=0, columnspan=2, padx=20, pady=(0, 20))
-        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm, corner_radius=ctk_corner_radius)
-        confirm_button.grid(row=2, column=0, padx=20, pady=(0, 20))
         cancel_button = customtkinter.CTkButton(self, text="Cancel", command=self.destroy, corner_radius=ctk_corner_radius)
-        cancel_button.grid(row=2, column=1, padx=(0, 20), pady=(0, 20))
+        cancel_button.grid(row=2, column=0, padx=20, pady=(0, 20))
+        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm, corner_radius=ctk_corner_radius)
+        confirm_button.grid(row=2, column=1, padx=(0, 20), pady=(0, 20))
 
         self.return_value = None
         self.cancelled = True
