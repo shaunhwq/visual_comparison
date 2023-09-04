@@ -276,11 +276,21 @@ class VisualComparisonApp(customtkinter.CTk):
 
         # Get data from popup
         popup = DataSelectionPopup(self.content_handler.data, column_titles=titles, text_width=text_width, ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"])
-        is_cancelled, rows = popup.get_input()
+        is_cancelled, (action, data) = popup.get_input()
 
         if is_cancelled:
             return
 
+        if action not in ["search", "filter"]:
+            raise NotImplementedError(f"Unknown action: {action}")
+
+        if action == "search":
+            search_index = data
+            self.on_specify_index(search_index)
+            return
+
+        # Filter action
+        rows = data
         if len(rows) == 0:
             msg_popup = MessageBoxPopup("No items selected. Ignoring selection", self.configurations["Display"]["ctk_corner_radius"])
             msg_popup.wait()
