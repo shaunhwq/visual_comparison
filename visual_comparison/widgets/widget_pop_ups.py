@@ -1,12 +1,13 @@
 import os
 import time
-from typing import List, Any, Tuple
+from typing import List
 
 import tkinter.ttk as ttk
 import tkinter
 from tkinter import filedialog
 import customtkinter
 
+from .widget_tree_view import TreeViewWidget
 from ..utils import validate_number_str, shift_widget_to_root_center, SearchTrie
 
 
@@ -238,26 +239,9 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
-        tree_frame = customtkinter.CTkFrame(self)
-        # Create Tree for display
-        tree = ttk.Treeview(tree_frame, columns=self.column_titles, show='headings')
-        tree.grid(row=0, column=0, sticky="nsew")
-        tree.columnconfigure(0, weight=1)
-        for col_idx, (column, data_type) in enumerate(zip(self.column_titles, self.data_types)):
-            tree.heading(column, text=column, command=lambda col_idx=col_idx: self.sort_rows(int(col_idx)))
-            col_width = text_width if data_type is str else number_width
-            tree.column(col_idx, width=col_width)
-        # Create scrollbar
-        vertical_scroll = customtkinter.CTkScrollbar(tree_frame, orientation="vertical", command=tree.yview)
-        vertical_scroll.grid(row=0, column=1, sticky="ns")
-        tree.configure(yscrollcommand=vertical_scroll.set)
-        tree_frame.grid(row=0, column=0, sticky="nsew")
-        tree_frame.columnconfigure(0, weight=1)
-
-        self.tree = tree
-        self.tree_add(list(data))
+        self.tree_widget = TreeViewWidget(data, column_titles, text_width, number_width, master=self, *args, **kwargs)
+        self.tree_widget.grid(row=0)
         self.refresh_title()
-        self.col_sort_reverse = [False] * len(self.column_titles)
 
         tabview = customtkinter.CTkTabview(self, width=text_width, height=100)
         tabview.grid(row=2, column=0, padx=20, pady=(5, 20), sticky="nsew")
@@ -308,8 +292,8 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         self.bind_class("Entry", "<Tab>", custom_tab)
 
     def on_search_button(self):
-        available_children = self.tree.get_children()
-        selected_children = self.tree.selection()
+        available_children = self.tree_widget.get_children()
+        selected_children = self.tree_widget.selection()
 
         # Must select one child only or have 1 child in window
         if not(len(available_children) == 1 or len(selected_children) == 1):
@@ -320,7 +304,7 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
             return
 
         child = available_children if len(selected_children) == 0 else selected_children
-        child_values = [data_type(item) for data_type, item in zip(self.data_types, self.child_values(child))]
+        child_values = [data_type(item) for data_type, item in zip(self.data_types, self.tree_widget.child_values(child))]
         selected_idx = child_values[0]
 
         self.return_value = ["search", selected_idx]
@@ -346,29 +330,14 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         idx_with_prefix = set(node.indices) if node is not None else set()
 
         data = [row for row in self.data if row[0] in idx_with_prefix]
-        self.tree_remove()
-        self.tree_add(data)
+        self.tree_widget.tree_remove()
+        self.tree_widget.tree_add(data)
         self.refresh_title()
-
-    def child_values(self, child):
-        return self.tree.item(child)["values"]
-
-    def tree_remove(self, children=None):
-        if children is None:
-            for child in self.tree.get_children():
-                self.tree.delete(child)
-        else:
-            for child in children:
-                self.tree.delete(child)
-
-    def tree_add(self, items: List[List[Any]], position=tkinter.END):
-        for item in items:
-            self.tree.insert("", position, values=item)
 
     def filter_options(self, column):
         column_index = self.column_titles.index(column)
         data_type = self.data_types[column_index]
-        data_to_filter = [self.child_values(child)[column_index] for child in self.tree.get_children()]
+        data_to_filter = [self.tree_widget.child_values(child)[column_index] for child in self.tree_widget.get_children()]
 
         self.grab_release()
         if data_type is int or data_type is float:
@@ -385,39 +354,29 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
             return
 
         keep_idxs = set(idxs)
-        idx_to_remove = [c for idx, c in enumerate(self.tree.get_children()) if idx not in keep_idxs]
-        self.tree_remove(idx_to_remove)
+        idx_to_remove = [c for idx, c in enumerate(self.tree_widget.get_children()) if idx not in keep_idxs]
+        self.tree_widget.tree_remove(idx_to_remove)
         self.refresh_title()
 
-    def sort_rows(self, col_idx):
-        self.col_sort_reverse[col_idx] = not self.col_sort_reverse[col_idx]
-        rows = [self.child_values(child) for child in self.tree.get_children()]
-        data_type = self.data_types[col_idx]
-        rows.sort(key=lambda row: data_type(row[col_idx]), reverse=self.col_sort_reverse[col_idx])
-        self.tree_remove()
-        self.tree_add(rows)
-
     def on_remove_row(self):
-        self.tree_remove(self.tree.selection())
+        self.tree_widget.remove_selected()
         self.refresh_title()
 
     def on_filter(self):
         rows = []
-        for child in self.tree.get_children():
-            rows.append([data_type(item) for data_type, item in zip(self.data_types, self.child_values(child))])
+        for child in self.tree_widget.get_children():
+            rows.append([data_type(item) for data_type, item in zip(self.data_types, self.tree_widget.child_values(child))])
 
         self.return_value = ["filter", rows]
         self.cancelled = False
         self.destroy()
 
     def on_reset(self):
-        self.tree_remove()
-        self.tree_add(self.data)
-        self.col_sort_reverse = [False] * len(self.column_titles)
+        self.tree_widget.reset()
         self.refresh_title()
 
     def refresh_title(self):
-        self.title(f"Data Selection. Num Items: {len(self.tree.get_children())}")
+        self.title(f"Data Selection. Num Items: {len(self.tree_widget.get_children())}")
 
     def get_input(self):
         self.master.wait_window(self)
