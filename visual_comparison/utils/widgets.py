@@ -1,8 +1,15 @@
 import customtkinter
 import tkinter
+import tkinter.ttk as ttk
 
 
-__all__ = ["shift_widget_to_root_center", "set_appearance_mode_and_theme", "create_tool_tip", "is_window_in_background"]
+__all__ = [
+    "shift_widget_to_root_center",
+    "set_appearance_mode_and_theme",
+    "create_tool_tip",
+    "is_window_in_background",
+    "set_tkinter_widgets_appearance_mode",
+]
 
 
 def shift_widget_to_root_center(parent_widget, child_widget):
@@ -73,3 +80,20 @@ def is_window_in_background(window):
         return window.focus_displayof() is None
     except KeyError as e:
         return True
+
+
+def set_tkinter_widgets_appearance_mode(ctk_root) -> None:
+    """
+    Sets appearance mode of tkinter objects to match the color scheme of customtkinter objects
+    :param ctk_root: customtkinter.CTk() object
+    """
+    bg_color = ctk_root._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkFrame"]["fg_color"])
+    text_color = ctk_root._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkLabel"]["text_color"])
+    selected_color = ctk_root._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkButton"]["fg_color"])
+
+    tree_style = ttk.Style()
+    tree_style.theme_use('default')
+    tree_style.configure("Treeview", background=bg_color, foreground=text_color, fieldbackground=bg_color, borderwidth=0.5)
+    tree_style.map('Treeview', background=[('selected', bg_color)], foreground=[('selected', selected_color)])
+    tree_style.configure("Treeview.Heading", background=bg_color, foreground=text_color, fieldbackground=bg_color, borderwidth=0.5)
+    tree_style.map('Treeview.Heading', background=[('selected', bg_color)], foreground=[('selected', selected_color)])

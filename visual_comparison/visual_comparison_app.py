@@ -16,7 +16,7 @@ from .managers import ZoomManager, ContentManager, VideoWriter, FastLoadChecker,
 from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
 from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup, ExportVideoPopup, ExportSelectionPopup, ProgressBarPopup, SettingsPopupWidget
 from .enums import VCModes, VCState
-from .utils import image_utils, set_appearance_mode_and_theme, file_reader, is_window_in_background
+from .utils import image_utils, set_appearance_mode_and_theme, file_reader, is_window_in_background, set_tkinter_widgets_appearance_mode
 from .configurations import read_config, parse_config, config_info
 
 
@@ -43,6 +43,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.configurations = parse_config(read_config(config_path))
 
         set_appearance_mode_and_theme(self.configurations["Appearance"]["mode"], self.configurations["Appearance"]["theme"])
+        set_tkinter_widgets_appearance_mode(self)
 
         self.root = root
         self.preview_folder = preview_folder
@@ -163,6 +164,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.configurations = new_config
         self.bind_keys_to_buttons(prev_config)
         set_appearance_mode_and_theme(new_config["Appearance"]["mode"], new_config["Appearance"]["theme"])
+        set_tkinter_widgets_appearance_mode(self)
 
     def on_change_dir(self):
         self.on_pause(paused=True)
