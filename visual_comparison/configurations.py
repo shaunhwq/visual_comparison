@@ -19,6 +19,8 @@ CV2_INTERPOLATION_TYPES = [
     "cv2.INTER_NEAREST",
     "cv2.INTER_CUBIC",
 ]
+DISPLAY_INTERPOLATION_TYPES = CV2_INTERPOLATION_TYPES + ["None"]
+ZOOM_INTERPOLATION_TYPES = CV2_INTERPOLATION_TYPES
 
 # Contains information on config.ini file, e.g. how to parse, default values for each. Possible options.
 config_info = dict(
@@ -27,12 +29,12 @@ config_info = dict(
         theme=dict(obj="options", type=str, values=["blue", "green", "dark-blue"], default="dark-blue"),
     ),
     Display=dict(
-        interpolation_type=dict(obj="options", type=eval, values=CV2_INTERPOLATION_TYPES, default="cv2.INTER_LINEAR"),
+        interpolation_type=dict(obj="options", type=eval, values=DISPLAY_INTERPOLATION_TYPES, default="cv2.INTER_LINEAR"),
         fast_loading_threshold_ms=dict(obj="entry", type=int, default=100),
         ctk_corner_radius=dict(obj="entry", type=int, default=3),
     ),
     Zoom=dict(
-        interpolation_type=dict(obj="options", type=eval, values=CV2_INTERPOLATION_TYPES, default="cv2.INTER_NEAREST"),
+        interpolation_type=dict(obj="options", type=eval, values=ZOOM_INTERPOLATION_TYPES, default="cv2.INTER_NEAREST"),
     ),
     Functionality=dict(
         max_fps=dict(obj="entry", type=int, default=60),
