@@ -287,12 +287,17 @@ class VisualComparisonApp(customtkinter.CTk):
             raise NotImplementedError(f"Unknown action: {action}")
 
         if action == "search":
-            search_index = data
-            if search_index not in self.content_handler.current_files:
-                msg_popup = MessageBoxPopup(f"Unable to change to idx '{search_index}', item not in current view", self.configurations["Display"]["ctk_corner_radius"])
+            search_name = data
+
+            # Index returned by search index is for displayed items, so we need to find which items are displayed
+            try:
+                selected_index = self.content_handler.current_files.index(search_name)
+            except ValueError:
+                msg_popup = MessageBoxPopup(f"Unable to change to '{search_name}', item not in current view", self.configurations["Display"]["ctk_corner_radius"])
                 msg_popup.wait()
                 return
-            self.on_specify_index(search_index)
+
+            self.on_specify_index(selected_index)
             return
 
         # Filter action

@@ -305,9 +305,9 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
 
         child = available_children if len(selected_children) == 0 else selected_children
         child_values = [data_type(item) for data_type, item in zip(self.data_types, self.tree_widget.child_values(child))]
-        selected_idx = child_values[0]
+        selected_name = child_values[1]
 
-        self.return_value = ["search", selected_idx]
+        self.return_value = ["search", selected_name]
         self.cancelled = False
         self.destroy()
 
