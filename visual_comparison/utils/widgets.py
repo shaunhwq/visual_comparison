@@ -91,9 +91,13 @@ def set_tkinter_widgets_appearance_mode(ctk_root) -> None:
     text_color = ctk_root._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkLabel"]["text_color"])
     selected_color = ctk_root._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkButton"]["fg_color"])
 
+    # bg color is light and selected color is either blue or dark-blue
+    if bg_color in ["gray86", "gray90"] and selected_color in ["#3a7ebf", "#3B8ED0"]:
+        selected_color = "royal blue"
+
     tree_style = ttk.Style()
     tree_style.theme_use('default')
-    tree_style.configure("Treeview", background=bg_color, foreground=text_color, fieldbackground=bg_color, borderwidth=0.5)
+    tree_style.configure("Treeview", background=bg_color, foreground=text_color, fieldbackground=bg_color, borderwidth=0.5, font=('Calibri', 10, 'bold'))
     tree_style.map('Treeview', background=[('selected', bg_color)], foreground=[('selected', selected_color)])
     tree_style.configure("Treeview.Heading", background=bg_color, foreground=text_color, fieldbackground=bg_color, borderwidth=0.5)
     tree_style.map('Treeview.Heading', background=[('selected', bg_color)], foreground=[('selected', selected_color)])
