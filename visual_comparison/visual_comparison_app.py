@@ -288,6 +288,10 @@ class VisualComparisonApp(customtkinter.CTk):
 
         if action == "search":
             search_index = data
+            if search_index not in self.content_handler.current_files:
+                msg_popup = MessageBoxPopup(f"Unable to change to idx '{search_index}', item not in current view", self.configurations["Display"]["ctk_corner_radius"])
+                msg_popup.wait()
+                return
             self.on_specify_index(search_index)
             return
 
