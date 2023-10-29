@@ -1,13 +1,14 @@
 import os
 import time
-from typing import List, Any
+from typing import List
 
 import tkinter.ttk as ttk
 import tkinter
 from tkinter import filedialog
 import customtkinter
 
-from ..utils import validate_number_str, shift_widget_to_root_center
+from .widget_tree_view import TreeViewWidget
+from ..utils import validate_number_str, shift_widget_to_root_center, SearchTrie
 
 
 __all__ = [
@@ -238,69 +239,105 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
-        tree_frame = customtkinter.CTkFrame(self)
-        # Create Tree for display
-        tree = ttk.Treeview(tree_frame, columns=self.column_titles, show='headings')
-        tree.grid(row=0, column=0, sticky="nsew")
-        tree.columnconfigure(0, weight=1)
-        for col_idx, (column, data_type) in enumerate(zip(self.column_titles, self.data_types)):
-            tree.heading(column, text=column, command=lambda col_idx=col_idx: self.sort_rows(int(col_idx)))
-            col_width = text_width if data_type is str else number_width
-            tree.column(col_idx, width=col_width)
-        # Create scrollbar
-        vertical_scroll = customtkinter.CTkScrollbar(tree_frame, orientation="vertical", command=tree.yview)
-        vertical_scroll.grid(row=0, column=1, sticky="ns")
-        tree.configure(yscrollcommand=vertical_scroll.set)
-        tree_frame.grid(row=0, column=0, sticky="nsew")
-        tree_frame.columnconfigure(0, weight=1)
-
-        self.tree = tree
-        self.tree_add(list(data))
+        self.tree_widget = TreeViewWidget(data, column_titles, text_width, number_width, master=self, *args, **kwargs)
+        self.tree_widget.grid(row=0)
         self.refresh_title()
-        self.col_sort_reverse = [False] * len(self.column_titles)
 
-        # Feature buttons
-        option_frame = customtkinter.CTkFrame(self)
-        remove_row_button = customtkinter.CTkButton(option_frame, text="Remove Row", command=self.on_remove_row, height=25, width=75, corner_radius=ctk_corner_radius)
-        remove_row_button.grid(row=1, column=0, padx=2, rowspan=2)
-        col_option_label = customtkinter.CTkLabel(option_frame, text="Filter By:", height=25)
-        col_option_label.grid(row=0, column=1, padx=2)
+        tabview = customtkinter.CTkTabview(self, width=text_width, height=100)
+        tabview.grid(row=2, column=0, padx=20, pady=(5, 20), sticky="nsew")
+        tabview.columnconfigure(0, weight=1)
+        tabview.add("Filter")
+        tabview.add("Search")
+        tabview.tab("Filter").grid_columnconfigure(0, weight=1)  # configure grid of individual tabs
+        tabview.tab("Search").grid_columnconfigure(0, weight=1)
+
+        filter_tab = tabview.tab("Filter")
+        option_frame = customtkinter.CTkFrame(filter_tab)
+        remove_row_button = customtkinter.CTkButton(option_frame, text="Exclude Row(s)", command=self.on_remove_row, height=25, width=75, corner_radius=ctk_corner_radius)
+        remove_row_button.grid(row=0, column=0, padx=2, rowspan=2)
         self.col_options = customtkinter.CTkOptionMenu(option_frame, values=self.column_titles, command=self.filter_options, height=25, width=75, corner_radius=ctk_corner_radius)
-        self.col_options.grid(row=1, column=1, padx=2)
-
+        self.col_options.grid(row=0, column=1, padx=2)
         reset_button = customtkinter.CTkButton(option_frame, text="Reset", command=self.on_reset, height=25, width=75, corner_radius=ctk_corner_radius)
-        reset_button.grid(row=1, column=2, padx=2, rowspan=2)
+        reset_button.grid(row=0, column=2, padx=2, rowspan=2)
         option_frame.grid(row=1, column=0, pady=5, padx=5)
+        filter_button = customtkinter.CTkButton(filter_tab, text="Filter", command=self.on_filter, height=25, corner_radius=ctk_corner_radius)
+        filter_button.grid(row=2, column=0, pady=(0, 5))
 
-        confirm_button = customtkinter.CTkButton(self, text="Confirm", command=self.on_confirm, height=25, corner_radius=ctk_corner_radius)
-        confirm_button.grid(row=2, column=0, pady=(0, 5))
+        search_tab = tabview.tab("Search")
+        # For search field with tab completion feature
+        self._unbind_entry_tab_pressed()
+        self.search_trie = SearchTrie([row[1] for row in data])
+        entry_var = tkinter.StringVar()
+        entry_var.trace("w", self.on_search_entry_updated)
+        # Ctk widgets
+        search_label = customtkinter.CTkLabel(search_tab, text="Search Prefix: ")
+        search_label.grid(row=0, column=0, pady=5, padx=20)
+        self.search_entry_field = customtkinter.CTkEntry(search_tab, textvariable=entry_var, corner_radius=ctk_corner_radius, width=text_width, placeholder_text="File Path")
+        self.search_entry_field.bind("<Tab>", self.on_tab_completion)
+        self.search_entry_field.grid(row=0, column=1, pady=5, padx=(0, 20))
+        jump_to_idx_button = customtkinter.CTkButton(search_tab, width=75, height=25, command=self.on_search_button, corner_radius=ctk_corner_radius, text="Show Item")
+        jump_to_idx_button.grid(row=1, column=0, pady=(0, 5), columnspan=2)
 
-        self.return_value = []
+        self.return_value = [None, None]
         self.cancelled = True
 
         self.update_idletasks()
         self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
-    def child_values(self, child):
-        return self.tree.item(child)["values"]
+    def _unbind_entry_tab_pressed(self):
+        def custom_tab(event):
+            event.widget.tk_focusNext().focus()
+            return "break"
+        self.bind_class("Entry", "<Tab>", custom_tab)
 
-    def tree_remove(self, children=None):
-        if children is None:
-            for child in self.tree.get_children():
-                self.tree.delete(child)
-        else:
-            for child in children:
-                self.tree.delete(child)
+    def on_search_button(self):
+        available_children = self.tree_widget.get_children()
+        selected_children = self.tree_widget.selection()
 
-    def tree_add(self, items: List[List[Any]], position=tkinter.END):
-        for item in items:
-            self.tree.insert("", position, values=item)
+        # Must select one child only or have 1 child in window
+        if not(len(available_children) == 1 or len(selected_children) == 1):
+            self.grab_release()
+            popup = MessageBoxPopup("Select one item only", self.ctk_corner_radius)
+            popup.wait()
+            self.grab_set()
+            return
+
+        child = available_children if len(selected_children) == 0 else selected_children
+        child_values = [data_type(item) for data_type, item in zip(self.data_types, self.tree_widget.child_values(child))]
+        selected_name = child_values[1]
+
+        self.return_value = ["search", selected_name]
+        self.cancelled = False
+        self.destroy()
+
+    def on_tab_completion(self, *args, **kwargs):
+        prefix = self.search_entry_field.get()
+        tab_completed_string = self.search_trie.tab_completion(prefix)
+        if tab_completed_string == "":
+            return
+
+        self.search_entry_field.insert(tkinter.END, tab_completed_string)
+
+    def on_search_entry_updated(self, *args, **kwargs):
+        # TODO: Can just remove items if more characters added
+        prefix = self.search_entry_field.get()
+
+        if prefix == "":
+            self.on_reset()
+            return
+        node = self.search_trie.search(prefix)
+        idx_with_prefix = set(node.indices) if node is not None else set()
+
+        data = [row for row in self.data if row[0] in idx_with_prefix]
+        self.tree_widget.tree_remove()
+        self.tree_widget.tree_add(data)
+        self.refresh_title()
 
     def filter_options(self, column):
         column_index = self.column_titles.index(column)
         data_type = self.data_types[column_index]
-        data_to_filter = [self.child_values(child)[column_index] for child in self.tree.get_children()]
+        data_to_filter = [self.tree_widget.child_values(child)[column_index] for child in self.tree_widget.get_children()]
 
         self.grab_release()
         if data_type is int or data_type is float:
@@ -317,36 +354,29 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
             return
 
         keep_idxs = set(idxs)
-        idx_to_remove = [c for idx, c in enumerate(self.tree.get_children()) if idx not in keep_idxs]
-        self.tree_remove(idx_to_remove)
+        idx_to_remove = [c for idx, c in enumerate(self.tree_widget.get_children()) if idx not in keep_idxs]
+        self.tree_widget.tree_remove(idx_to_remove)
         self.refresh_title()
-
-    def sort_rows(self, col_idx):
-        self.col_sort_reverse[col_idx] = not self.col_sort_reverse[col_idx]
-        rows = [self.child_values(child) for child in self.tree.get_children()]
-        data_type = self.data_types[col_idx]
-        rows.sort(key=lambda row: data_type(row[col_idx]), reverse=self.col_sort_reverse[col_idx])
-        self.tree_remove()
-        self.tree_add(rows)
 
     def on_remove_row(self):
-        self.tree_remove(self.tree.selection())
+        self.tree_widget.remove_selected()
         self.refresh_title()
 
-    def on_confirm(self):
-        for child in self.tree.get_children():
-            self.return_value.append([data_type(item) for data_type, item in zip(self.data_types, self.child_values(child))])
+    def on_filter(self):
+        rows = []
+        for child in self.tree_widget.get_children():
+            rows.append([data_type(item) for data_type, item in zip(self.data_types, self.tree_widget.child_values(child))])
+
+        self.return_value = ["filter", rows]
         self.cancelled = False
         self.destroy()
 
     def on_reset(self):
-        self.tree_remove()
-        self.tree_add(self.data)
-        self.col_sort_reverse = [False] * len(self.column_titles)
+        self.tree_widget.reset()
         self.refresh_title()
 
     def refresh_title(self):
-        self.title(f"Data Selection. Num Items: {len(self.tree.get_children())}")
+        self.title(f"Data Selection. Num Items: {len(self.tree_widget.get_children())}")
 
     def get_input(self):
         self.master.wait_window(self)

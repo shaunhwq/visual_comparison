@@ -16,7 +16,7 @@ from .managers import ZoomManager, ContentManager, VideoWriter, FastLoadChecker,
 from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
 from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup, ExportVideoPopup, ExportSelectionPopup, ProgressBarPopup, SettingsPopupWidget
 from .enums import VCModes, VCState
-from .utils import image_utils, set_appearance_mode_and_theme, file_reader, is_window_in_background
+from .utils import image_utils, set_appearance_mode_and_theme, file_reader, is_window_in_background, set_tkinter_widgets_appearance_mode
 from .configurations import read_config, parse_config, config_info
 
 
@@ -43,6 +43,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.configurations = parse_config(read_config(config_path))
 
         set_appearance_mode_and_theme(self.configurations["Appearance"]["mode"], self.configurations["Appearance"]["theme"])
+        set_tkinter_widgets_appearance_mode(self)
 
         self.root = root
         self.preview_folder = preview_folder
@@ -163,6 +164,7 @@ class VisualComparisonApp(customtkinter.CTk):
         self.configurations = new_config
         self.bind_keys_to_buttons(prev_config)
         set_appearance_mode_and_theme(new_config["Appearance"]["mode"], new_config["Appearance"]["theme"])
+        set_tkinter_widgets_appearance_mode(self)
 
     def on_change_dir(self):
         self.on_pause(paused=True)
@@ -276,11 +278,30 @@ class VisualComparisonApp(customtkinter.CTk):
 
         # Get data from popup
         popup = DataSelectionPopup(self.content_handler.data, column_titles=titles, text_width=text_width, ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"])
-        is_cancelled, rows = popup.get_input()
+        is_cancelled, (action, data) = popup.get_input()
 
         if is_cancelled:
             return
 
+        if action not in ["search", "filter"]:
+            raise NotImplementedError(f"Unknown action: {action}")
+
+        if action == "search":
+            search_name = data
+
+            # Index returned by search index is for displayed items, so we need to find which items are displayed
+            try:
+                selected_index = self.content_handler.current_files.index(search_name)
+            except ValueError:
+                msg_popup = MessageBoxPopup(f"Unable to change to '{search_name}', item not in current view", self.configurations["Display"]["ctk_corner_radius"])
+                msg_popup.wait()
+                return
+
+            self.on_specify_index(selected_index)
+            return
+
+        # Filter action
+        rows = data
         if len(rows) == 0:
             msg_popup = MessageBoxPopup("No items selected. Ignoring selection", self.configurations["Display"]["ctk_corner_radius"])
             msg_popup.wait()
