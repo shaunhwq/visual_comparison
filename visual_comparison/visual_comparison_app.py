@@ -120,6 +120,10 @@ class VisualComparisonApp(customtkinter.CTk):
 
         self.bind_methods_to_keys()
 
+    def display_msg_popup(self, message):
+        msg_popup = widgets.MessageBoxPopup(message, self.configurations["Display"]["ctk_corner_radius"])
+        msg_popup.wait()
+
     def load_content(self):
         popup = widgets.RootSelectionPopup(self.root, self.preview_folder, self.configurations["Display"]["ctk_corner_radius"])
         cancelled, ret_vals = popup.get_input()
@@ -130,12 +134,10 @@ class VisualComparisonApp(customtkinter.CTk):
         content_handler = managers.ContentManager(root=root_folder, preview_folder=preview_folder)
 
         if len(content_handler.methods) <= 1:
-            msg_popup = widgets.MessageBoxPopup("Root folder must contain more than 1 sub folder", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup("Root folder must contain more than 1 sub folder")
             return False
         if len(content_handler.files) == 0:
-            msg_popup = widgets.MessageBoxPopup("There are no common files in all sub folders", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup("There are no common files in all sub folders")
             return False
 
         self.content_handler = content_handler
@@ -256,8 +258,7 @@ class VisualComparisonApp(customtkinter.CTk):
             return
 
         if len(new_methods) < 2:
-            msg_popup = widgets.MessageBoxPopup("Please select more than 2 methods", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup("Please select more than 2 methods")
             return
         self.content_handler.current_methods = new_methods
         self.cb_widget.set_mode(VCModes.Compare)
@@ -286,8 +287,7 @@ class VisualComparisonApp(customtkinter.CTk):
         # Filter action
         rows = data
         if len(rows) == 0:
-            msg_popup = widgets.MessageBoxPopup("No items selected. Ignoring selection", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup("No items selected. Ignoring selection")
             return
 
         # Setting app states and files
@@ -369,9 +369,7 @@ class VisualComparisonApp(customtkinter.CTk):
         # Need to verify when on_specify_index is called with not None index
         ret = self.content_handler.on_specify_index(value=index)
         if not ret:
-            message = f"Index {index} not in range [0, {upper_bound}]"
-            msg_popup = widgets.MessageBoxPopup(message, self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup(f"Index {index} not in range [0, {upper_bound}]")
             return
 
         self.preview_widget.highlight_selected(self.content_handler.current_index)
@@ -420,8 +418,7 @@ class VisualComparisonApp(customtkinter.CTk):
         :return: None
         """
         if not hasattr(self, "display_image"):
-            msg_popup = widgets.MessageBoxPopup("self.display_image does not exist", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup("self.display_image does not exist")
             return
 
         # When stop is clicked. Export Button changes to a stop button when writing to video.
@@ -463,8 +460,7 @@ class VisualComparisonApp(customtkinter.CTk):
         export_path = video_export_options["export_path"]
         if export_type == "Fixed (Concatenated)":
             if not self.content_handler.has_video():
-                msg_popup = widgets.MessageBoxPopup("Current file is not a video, can't export in Concatenate mode", self.configurations["Display"]["ctk_corner_radius"])
-                msg_popup.wait()
+                self.display_msg_popup("Current file is not a video, can't export in Concatenate mode")
                 self.focus_get()
                 return
             Thread(target=lambda: self.export_fixed_video(export_path)).start()
@@ -485,15 +481,13 @@ class VisualComparisonApp(customtkinter.CTk):
         try:
             cv2.imwrite(dialog_result.name, self.display_image)
         except cv2.error as e:
-            msg_popup = widgets.MessageBoxPopup(e, self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup(e)
 
     def export_fixed_video(self, file_path):
         # Check video extension
         file_extension = os.path.splitext(file_path)[-1]
         if file_extension != ".mp4":
-            msg_popup = widgets.MessageBoxPopup(f"Unsupported file extension: {file_extension}", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup(f"Unsupported file extension: {file_extension}")
             return
 
         # Get video information
@@ -669,8 +663,7 @@ class VisualComparisonApp(customtkinter.CTk):
         ret = self.video_writer.write_image(img_to_write)
         if not ret:
             self.reset_video_writer()
-            msg_popup = widgets.MessageBoxPopup("Video writing stopped because image size has changed", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup("Video writing stopped because image size has changed")
 
         # Inform user that it is still recording
         utils.image_utils.put_text(img_to_write, "Recording", utils.image_utils.TextPosition.TOP_CENTER, fg_color=(0, 0, 255))
