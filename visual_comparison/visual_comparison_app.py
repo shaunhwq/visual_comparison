@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from .managers import ZoomManager, ContentManager, VideoWriter, FastLoadChecker, IconManager
 from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
-from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup, ExportVideoPopup, ExportSelectionPopup, ProgressBarPopup, SettingsPopupWidget
+from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, SearchDataPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup, ExportVideoPopup, ExportSelectionPopup, ProgressBarPopup, SettingsPopupWidget
 from .enums import VCModes, VCState
 from .utils import image_utils, set_appearance_mode_and_theme, file_reader, is_window_in_background, set_tkinter_widgets_appearance_mode
 from .configurations import read_config, parse_config, config_info
@@ -62,7 +62,7 @@ class VisualComparisonApp(customtkinter.CTk):
         # Create Control Buttons
         cb_callbacks = dict(
             on_prev_file=self.on_prev_file,
-            on_specify_index=self.on_specify_index,
+            on_search=self.on_specify_index,
             on_next_file=self.on_next_file,
             on_filter_files=self.on_filter_files,
             on_prev_method=self.on_prev_method,
@@ -273,31 +273,15 @@ class VisualComparisonApp(customtkinter.CTk):
         # Prepare data for populating popup
         row = max(self.content_handler.data, key=lambda row: len(row[1]))
         text_width = int(400./55 * len(row[1])) + 25  # Number of pixels for width
+        text_width = max(text_width, 100)
         num_titles = max(len(d) for d in self.content_handler.data)
         titles = self.content_handler.data_titles[: num_titles]
 
         # Get data from popup
         popup = DataSelectionPopup(self.content_handler.data, column_titles=titles, text_width=text_width, ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"])
-        is_cancelled, (action, data) = popup.get_input()
+        is_cancelled, data = popup.get_input()
 
         if is_cancelled:
-            return
-
-        if action not in ["search", "filter"]:
-            raise NotImplementedError(f"Unknown action: {action}")
-
-        if action == "search":
-            search_name = data
-
-            # Index returned by search index is for displayed items, so we need to find which items are displayed
-            try:
-                selected_index = self.content_handler.current_files.index(search_name)
-            except ValueError:
-                msg_popup = MessageBoxPopup(f"Unable to change to '{search_name}', item not in current view", self.configurations["Display"]["ctk_corner_radius"])
-                msg_popup.wait()
-                return
-
-            self.on_specify_index(selected_index)
             return
 
         # Filter action
@@ -367,14 +351,18 @@ class VisualComparisonApp(customtkinter.CTk):
 
         upper_bound = len(self.content_handler.current_files) - 1
         if index is None:
-            popup = GetNumberBetweenRangePopup(
-                text=f"Enter an index betweeen [0, {len(self.content_handler.current_files) - 1}]",
-                title="Specify file index",
-                desired_type=int,
-                lower_bound=0,
-                upper_bound=upper_bound,
-                ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"]
-            )
+            current_methods_set = set(self.content_handler.current_files)
+            current_data = [row for row in self.content_handler.data if row[1] in current_methods_set]
+            for i in range(len(current_data)):
+                current_data[i][0] = i
+            # Prepare data for populating popup
+            row = max(current_data, key=lambda row: len(row[1]))
+            text_width = int(400. / 55 * len(row[1])) + 25  # Number of pixels for width
+            text_width = max(text_width, 100)
+            num_titles = max(len(d) for d in self.content_handler.data)
+            titles = self.content_handler.data_titles[: num_titles]
+
+            popup = SearchDataPopup(current_data, titles, self.configurations["Display"]["ctk_corner_radius"], text_width)
             is_cancelled, index = popup.get_input()
             if is_cancelled:
                 return
