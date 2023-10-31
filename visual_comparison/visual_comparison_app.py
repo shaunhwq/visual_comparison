@@ -12,12 +12,11 @@ import numpy as np
 import customtkinter
 from tqdm import tqdm
 
-from .managers import ZoomManager, ContentManager, VideoWriter, FastLoadChecker, IconManager
-from .widgets import DisplayWidget, ControlButtonsWidget, PreviewWidget, VideoControlsWidget
-from .widgets import MultiSelectPopUpWidget, DataSelectionPopup, MessageBoxPopup, GetNumberBetweenRangePopup, RootSelectionPopup, ExportVideoPopup, ExportSelectionPopup, ProgressBarPopup, SettingsPopupWidget
+from . import managers
+from . import widgets
+from . import utils
+from . import configurations
 from .enums import VCModes, VCState
-from .utils import image_utils, set_appearance_mode_and_theme, file_reader, is_window_in_background, set_tkinter_widgets_appearance_mode
-from .configurations import read_config, parse_config, config_info
 
 
 @dataclasses.dataclass
@@ -40,29 +39,29 @@ class VisualComparisonApp(customtkinter.CTk):
         super().__init__()
 
         self.config_path = config_path
-        self.configurations = parse_config(read_config(config_path))
+        self.configurations = configurations.parse_config(configurations.read_config(config_path))
 
-        set_appearance_mode_and_theme(self.configurations["Appearance"]["mode"], self.configurations["Appearance"]["theme"])
-        set_tkinter_widgets_appearance_mode(self)
+        utils.set_appearance_mode_and_theme(self.configurations["Appearance"]["mode"], self.configurations["Appearance"]["theme"])
+        utils.set_tkinter_widgets_appearance_mode(self)
 
         self.root = root
         self.preview_folder = preview_folder
 
         # Maintains the selected method & function for the app
         self.app_status = VCInternalState()
-        self.content_handler: Optional[ContentManager] = None
+        self.content_handler: Optional[managers.ContentManager] = None
         self.images = None
-        self.fast_load_checker = FastLoadChecker()
-        self.icon_manager = IconManager(icon_assets_path=os.path.join(assets_path, "icons"))
+        self.fast_load_checker = managers.FastLoadChecker()
+        self.icon_manager = managers.IconManager(icon_assets_path=os.path.join(assets_path, "icons"))
 
         # Create Preview Window
-        self.preview_widget = PreviewWidget(master=self)
+        self.preview_widget = widgets.PreviewWidget(master=self)
         self.preview_widget.grid(row=0, column=0)
 
         # Create Control Buttons
         cb_callbacks = dict(
             on_prev_file=self.on_prev_file,
-            on_specify_index=self.on_specify_index,
+            on_search=self.on_specify_index,
             on_next_file=self.on_next_file,
             on_filter_files=self.on_filter_files,
             on_prev_method=self.on_prev_method,
@@ -73,7 +72,7 @@ class VisualComparisonApp(customtkinter.CTk):
             on_change_dir=self.on_change_dir,
             on_change_settings=self.on_change_settings,
         )
-        self.cb_widget = ControlButtonsWidget(
+        self.cb_widget = widgets.ControlButtonsWidget(
             master=self,
             icon_manager=self.icon_manager,
             callbacks=cb_callbacks,
@@ -90,7 +89,7 @@ class VisualComparisonApp(customtkinter.CTk):
             on_specify_frame_no=self.on_specify_frame_no,
             on_change_playback_rate=self.on_change_playback_rate,
         )
-        self.video_controls = VideoControlsWidget(
+        self.video_controls = widgets.VideoControlsWidget(
             master=self,
             callbacks=vc_callbacks,
             ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"],
@@ -99,9 +98,9 @@ class VisualComparisonApp(customtkinter.CTk):
         self.video_writer_options = {}
 
         # Create Display Window
-        self.display_handler = DisplayWidget(master=self)
+        self.display_handler = widgets.DisplayWidget(master=self)
         self.display_handler.grid(row=3, column=0)
-        self.zoom_manager = ZoomManager(self.display_handler)
+        self.zoom_manager = managers.ZoomManager(self.display_handler)
 
         # File changing bindings
         self.bind_keys_to_buttons()
@@ -121,22 +120,24 @@ class VisualComparisonApp(customtkinter.CTk):
 
         self.bind_methods_to_keys()
 
+    def display_msg_popup(self, message):
+        msg_popup = widgets.MessageBoxPopup(message, self.configurations["Display"]["ctk_corner_radius"])
+        msg_popup.wait()
+
     def load_content(self):
-        popup = RootSelectionPopup(self.root, self.preview_folder, self.configurations["Display"]["ctk_corner_radius"])
+        popup = widgets.RootSelectionPopup(self.root, self.preview_folder, self.configurations["Display"]["ctk_corner_radius"])
         cancelled, ret_vals = popup.get_input()
         if cancelled:
             return False
 
         root_folder, preview_folder = ret_vals
-        content_handler = ContentManager(root=root_folder, preview_folder=preview_folder)
+        content_handler = managers.ContentManager(root=root_folder, preview_folder=preview_folder)
 
         if len(content_handler.methods) <= 1:
-            msg_popup = MessageBoxPopup("Root folder must contain more than 1 sub folder", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup("Root folder must contain more than 1 sub folder")
             return False
         if len(content_handler.files) == 0:
-            msg_popup = MessageBoxPopup("There are no common files in all sub folders", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup("There are no common files in all sub folders")
             return False
 
         self.content_handler = content_handler
@@ -154,7 +155,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
     def on_change_settings(self):
         self.on_pause(paused=True)
-        settings_popup = SettingsPopupWidget(self.config_path, config_info, self.icon_manager, self.configurations["Display"]["ctk_corner_radius"])
+        settings_popup = widgets.SettingsPopupWidget(self.config_path, configurations.config_info, self.icon_manager, self.configurations["Display"]["ctk_corner_radius"])
         is_cancelled, new_config = settings_popup.get_input()
 
         if is_cancelled:
@@ -163,8 +164,8 @@ class VisualComparisonApp(customtkinter.CTk):
         prev_config = self.configurations
         self.configurations = new_config
         self.bind_keys_to_buttons(prev_config)
-        set_appearance_mode_and_theme(new_config["Appearance"]["mode"], new_config["Appearance"]["theme"])
-        set_tkinter_widgets_appearance_mode(self)
+        utils.set_appearance_mode_and_theme(new_config["Appearance"]["mode"], new_config["Appearance"]["theme"])
+        utils.set_tkinter_widgets_appearance_mode(self)
 
     def on_change_dir(self):
         self.on_pause(paused=True)
@@ -180,7 +181,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
         # Destroy and re-create preview widget TODO: Try reuse
         self.preview_widget.destroy()
-        self.preview_widget = PreviewWidget(master=self)
+        self.preview_widget = widgets.PreviewWidget(master=self)
         self.preview_widget.grid(row=0, column=0)
         self.preview_widget.populate_preview_window(self.content_handler.thumbnails, self.on_specify_index)
         self.on_specify_index(0)
@@ -250,15 +251,14 @@ class VisualComparisonApp(customtkinter.CTk):
     def on_select_methods(self):
         self.on_pause(paused=True)
 
-        popup = MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods, ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"])
+        popup = widgets.MultiSelectPopUpWidget(all_options=self.content_handler.methods, current_options=self.content_handler.current_methods, ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"])
         is_cancelled, new_methods = popup.get_input()
 
         if is_cancelled:
             return
 
         if len(new_methods) < 2:
-            msg_popup = MessageBoxPopup("Please select more than 2 methods", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup("Please select more than 2 methods")
             return
         self.content_handler.current_methods = new_methods
         self.cb_widget.set_mode(VCModes.Compare)
@@ -273,38 +273,21 @@ class VisualComparisonApp(customtkinter.CTk):
         # Prepare data for populating popup
         row = max(self.content_handler.data, key=lambda row: len(row[1]))
         text_width = int(400./55 * len(row[1])) + 25  # Number of pixels for width
+        text_width = max(text_width, 100)
         num_titles = max(len(d) for d in self.content_handler.data)
         titles = self.content_handler.data_titles[: num_titles]
 
         # Get data from popup
-        popup = DataSelectionPopup(self.content_handler.data, column_titles=titles, text_width=text_width, ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"])
-        is_cancelled, (action, data) = popup.get_input()
+        popup = widgets.DataSelectionPopup(self.content_handler.data, column_titles=titles, text_width=text_width, ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"])
+        is_cancelled, data = popup.get_input()
 
         if is_cancelled:
-            return
-
-        if action not in ["search", "filter"]:
-            raise NotImplementedError(f"Unknown action: {action}")
-
-        if action == "search":
-            search_name = data
-
-            # Index returned by search index is for displayed items, so we need to find which items are displayed
-            try:
-                selected_index = self.content_handler.current_files.index(search_name)
-            except ValueError:
-                msg_popup = MessageBoxPopup(f"Unable to change to '{search_name}', item not in current view", self.configurations["Display"]["ctk_corner_radius"])
-                msg_popup.wait()
-                return
-
-            self.on_specify_index(selected_index)
             return
 
         # Filter action
         rows = data
         if len(rows) == 0:
-            msg_popup = MessageBoxPopup("No items selected. Ignoring selection", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup("No items selected. Ignoring selection")
             return
 
         # Setting app states and files
@@ -316,7 +299,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
         # Destroy and re-create preview widget TODO: Try reuse
         self.preview_widget.destroy()
-        self.preview_widget = PreviewWidget(master=self)
+        self.preview_widget = widgets.PreviewWidget(master=self)
         self.preview_widget.grid(row=0, column=0)
         selected_thumbnails = [self.content_handler.thumbnails[r[0]] for r in rows]
         self.preview_widget.populate_preview_window(selected_thumbnails, self.on_specify_index)
@@ -332,7 +315,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
         _, total_num_frames, _ = self.content_handler.get_video_position()
 
-        popup = GetNumberBetweenRangePopup(
+        popup = widgets.GetNumberBetweenRangePopup(
             text=f"Enter frame number in range [0, {total_num_frames}]",
             title="Specify frame number",
             desired_type=int,
@@ -367,14 +350,18 @@ class VisualComparisonApp(customtkinter.CTk):
 
         upper_bound = len(self.content_handler.current_files) - 1
         if index is None:
-            popup = GetNumberBetweenRangePopup(
-                text=f"Enter an index betweeen [0, {len(self.content_handler.current_files) - 1}]",
-                title="Specify file index",
-                desired_type=int,
-                lower_bound=0,
-                upper_bound=upper_bound,
-                ctk_corner_radius=self.configurations["Display"]["ctk_corner_radius"]
-            )
+            current_methods_set = set(self.content_handler.current_files)
+            current_data = [row for row in self.content_handler.data if row[1] in current_methods_set]
+            for i in range(len(current_data)):
+                current_data[i][0] = i
+            # Prepare data for populating popup
+            row = max(current_data, key=lambda row: len(row[1]))
+            text_width = int(400. / 55 * len(row[1])) + 25  # Number of pixels for width
+            text_width = max(text_width, 100)
+            num_titles = max(len(d) for d in self.content_handler.data)
+            titles = self.content_handler.data_titles[: num_titles]
+
+            popup = widgets.SearchDataPopup(current_data, titles, self.configurations["Display"]["ctk_corner_radius"], text_width)
             is_cancelled, index = popup.get_input()
             if is_cancelled:
                 return
@@ -382,9 +369,7 @@ class VisualComparisonApp(customtkinter.CTk):
         # Need to verify when on_specify_index is called with not None index
         ret = self.content_handler.on_specify_index(value=index)
         if not ret:
-            message = f"Index {index} not in range [0, {upper_bound}]"
-            msg_popup = MessageBoxPopup(message, self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup(f"Index {index} not in range [0, {upper_bound}]")
             return
 
         self.preview_widget.highlight_selected(self.content_handler.current_index)
@@ -433,8 +418,7 @@ class VisualComparisonApp(customtkinter.CTk):
         :return: None
         """
         if not hasattr(self, "display_image"):
-            msg_popup = MessageBoxPopup("self.display_image does not exist", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup("self.display_image does not exist")
             return
 
         # When stop is clicked. Export Button changes to a stop button when writing to video.
@@ -444,7 +428,7 @@ class VisualComparisonApp(customtkinter.CTk):
 
         self.on_pause(paused=True)
 
-        export_select_popup = ExportSelectionPopup(self.configurations["Display"]["ctk_corner_radius"])
+        export_select_popup = widgets.ExportSelectionPopup(self.configurations["Display"]["ctk_corner_radius"])
         is_cancelled, export_format = export_select_popup.get_input()
         if is_cancelled:
             return
@@ -461,7 +445,7 @@ class VisualComparisonApp(customtkinter.CTk):
         else:
             video_fps = self.configurations["Functionality"]["max_fps"]
 
-        export_video_popup = ExportVideoPopup(
+        export_video_popup = widgets.ExportVideoPopup(
             file_name=os.path.splitext(self.content_handler.current_files[self.content_handler.current_index])[0],
             img_width=width,
             img_height=height,
@@ -476,13 +460,12 @@ class VisualComparisonApp(customtkinter.CTk):
         export_path = video_export_options["export_path"]
         if export_type == "Fixed (Concatenated)":
             if not self.content_handler.has_video():
-                msg_popup = MessageBoxPopup("Current file is not a video, can't export in Concatenate mode", self.configurations["Display"]["ctk_corner_radius"])
-                msg_popup.wait()
+                self.display_msg_popup("Current file is not a video, can't export in Concatenate mode")
                 self.focus_get()
                 return
             Thread(target=lambda: self.export_fixed_video(export_path)).start()
         elif export_type == "Custom":
-            self.video_writer = VideoWriter(export_path, width, height, video_export_options["export_fps"])
+            self.video_writer = managers.VideoWriter(export_path, width, height, video_export_options["export_fps"])
             self.video_writer_options = video_export_options.get("export_options", {})
             self.cb_widget.toggle_export_button()
         else:
@@ -498,15 +481,13 @@ class VisualComparisonApp(customtkinter.CTk):
         try:
             cv2.imwrite(dialog_result.name, self.display_image)
         except cv2.error as e:
-            msg_popup = MessageBoxPopup(e, self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup(e)
 
     def export_fixed_video(self, file_path):
         # Check video extension
         file_extension = os.path.splitext(file_path)[-1]
         if file_extension != ".mp4":
-            msg_popup = MessageBoxPopup(f"Unsupported file extension: {file_extension}", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup(f"Unsupported file extension: {file_extension}")
             return
 
         # Get video information
@@ -518,10 +499,10 @@ class VisualComparisonApp(customtkinter.CTk):
 
         # Reset video and export
         self.content_handler.set_video_position(0)
-        writer = VideoWriter(output_path=file_path, width=width, height=height, fps=video_fps)
+        writer = managers.VideoWriter(output_path=file_path, width=width, height=height, fps=video_fps)
 
         # Create progress bars
-        pbar_popup = ProgressBarPopup(total=video_length, desc="Exporting video...")
+        pbar_popup = widgets.ProgressBarPopup(total=video_length, desc="Exporting video...")
         pbar_tqdm = tqdm(total=video_length, desc="Exporting video...")
 
         # Write file
@@ -531,9 +512,9 @@ class VisualComparisonApp(customtkinter.CTk):
                 break
 
             # Puts text in place
-            title_positions = [image_utils.TextPosition.TOP_LEFT] * len(current_methods)
+            title_positions = [utils.image_utils.TextPosition.TOP_LEFT] * len(current_methods)
             for image, title, title_pos in zip(images, current_methods, title_positions):
-                image_utils.put_text(image, title, title_pos)
+                utils.image_utils.put_text(image, title, title_pos)
 
             writer.write_image(np.hstack(images))
 
@@ -554,7 +535,7 @@ class VisualComparisonApp(customtkinter.CTk):
         :return: None
         """
         if hasattr(self, "display_image"):
-            image_utils.image_to_clipboard(self.display_image)
+            utils.image_utils.image_to_clipboard(self.display_image)
 
     def display(self):
         start_time = time.time()
@@ -562,7 +543,7 @@ class VisualComparisonApp(customtkinter.CTk):
         # Fast loading - Activates if change file button is held repeatedly (a, d, <, > keys)
         # Prevents very long load times when has many videos/images to load and want to use buttons to switch quickly
         if self.fast_load_checker.check(threshold_ms=self.configurations["Display"]["fast_loading_threshold_ms"]) and self.app_status.STATE == VCState.UPDATE_FILE:
-            cap = file_reader.read_media_file(self.content_handler.get_paths()[0])
+            cap = utils.file_reader.read_media_file(self.content_handler.get_paths()[0])
             ret, display_image = cap.read()
             self.display_handler.update_image(display_image, self.configurations["Display"]["interpolation_type"])
             self.after(self.get_sleep_time_ms(start_time), self.display)
@@ -606,16 +587,16 @@ class VisualComparisonApp(customtkinter.CTk):
         images = [img.copy() for img in images]
         current_methods = self.content_handler.current_methods
 
-        title_positions = [image_utils.TextPosition.TOP_LEFT] * len(current_methods)
+        title_positions = [utils.image_utils.TextPosition.TOP_LEFT] * len(current_methods)
         if self.app_status.MODE == VCModes.Compare:
-            title_positions = [image_utils.TextPosition.TOP_LEFT,
-                               image_utils.TextPosition.TOP_RIGHT,
-                               image_utils.TextPosition.BTM_LEFT,
-                               image_utils.TextPosition.BTM_RIGHT]
+            title_positions = [utils.image_utils.TextPosition.TOP_LEFT,
+                               utils.image_utils.TextPosition.TOP_RIGHT,
+                               utils.image_utils.TextPosition.BTM_LEFT,
+                               utils.image_utils.TextPosition.BTM_RIGHT]
 
         # Puts text in place
         for image, title, title_pos in zip(images, current_methods, title_positions):
-            image_utils.put_text(image, title, title_pos)
+            utils.image_utils.put_text(image, title, title_pos)
 
         # Set to self.output image incase mouse is out of bounds
         if self.app_status.MODE == VCModes.Concat:
@@ -632,7 +613,7 @@ class VisualComparisonApp(customtkinter.CTk):
             m_x, m_y = self.display_handler.mouse_position
             i_y, i_x = images[0].shape[:2]
             if 0 <= m_x < i_x and 0 <= m_y < i_y:
-                comparison_img = image_utils.merge_multiple_images(images[:4], self.display_handler.mouse_position)
+                comparison_img = utils.image_utils.merge_multiple_images(images[:4], self.display_handler.mouse_position)
                 self.cropped_image = self.zoom_manager.crop_regions([comparison_img], self.configurations["Zoom"]["interpolation_type"])
                 self.output_image = self.zoom_manager.draw_regions(comparison_img)
             elif self.app_status.STATE == VCState.UPDATE_MODE:
@@ -676,17 +657,16 @@ class VisualComparisonApp(customtkinter.CTk):
 
             # Show playback progress on video
             if self.video_writer_options.get("render_video_frames_num", None):
-                image_utils.put_text(img_to_write, str(video_position), image_utils.TextPosition.MIDDLE_LEFT, fg_color=(255, 255, 255))
-                image_utils.put_text(img_to_write, str(video_length), image_utils.TextPosition.MIDDLE_RIGHT, fg_color=(255, 255, 255))
+                utils.image_utils.put_text(img_to_write, str(video_position), utils.image_utils.TextPosition.MIDDLE_LEFT, fg_color=(255, 255, 255))
+                utils.image_utils.put_text(img_to_write, str(video_length), utils.image_utils.TextPosition.MIDDLE_RIGHT, fg_color=(255, 255, 255))
 
         ret = self.video_writer.write_image(img_to_write)
         if not ret:
             self.reset_video_writer()
-            msg_popup = MessageBoxPopup("Video writing stopped because image size has changed", self.configurations["Display"]["ctk_corner_radius"])
-            msg_popup.wait()
+            self.display_msg_popup("Video writing stopped because image size has changed")
 
         # Inform user that it is still recording
-        image_utils.put_text(img_to_write, "Recording", image_utils.TextPosition.TOP_CENTER, fg_color=(0, 0, 255))
+        utils.image_utils.put_text(img_to_write, "Recording", utils.image_utils.TextPosition.TOP_CENTER, fg_color=(0, 0, 255))
 
     def get_sleep_time_ms(self, start_time: float):
         """
@@ -700,7 +680,7 @@ class VisualComparisonApp(customtkinter.CTk):
         :param start_time: time.time() from start of self.display
         :return: Time to sleep in ms
         """
-        in_background = is_window_in_background(self)
+        in_background = utils.is_window_in_background(self)
         if in_background and self.configurations["Functionality"]["reduce_cpu_usage_in_background"]:
             return 500
 
