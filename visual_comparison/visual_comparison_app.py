@@ -291,7 +291,7 @@ class VisualComparisonApp(customtkinter.CTk):
             return
 
         # Setting app states and files
-        self.content_handler.current_files = [r[1] for r in rows]
+        self.content_handler.set_current_files([r[0] for r in rows])
         self.content_handler.current_index = 0
         self.cb_widget.set_mode(VCModes.Compare)
         self.cb_widget.show_method_button(show=False)
@@ -543,7 +543,7 @@ class VisualComparisonApp(customtkinter.CTk):
         # Fast loading - Activates if change file button is held repeatedly (a, d, <, > keys)
         # Prevents very long load times when has many videos/images to load and want to use buttons to switch quickly
         if self.fast_load_checker.check(threshold_ms=self.configurations["Display"]["fast_loading_threshold_ms"]) and self.app_status.STATE == VCState.UPDATE_FILE:
-            cap = utils.file_reader.read_media_file(self.content_handler.get_paths()[0])
+            cap = self.content_handler.load_single_file()
             ret, display_image = cap.read()
             self.display_handler.update_image(display_image, self.configurations["Display"]["interpolation_type"])
             self.after(self.get_sleep_time_ms(start_time), self.display)
@@ -552,7 +552,7 @@ class VisualComparisonApp(customtkinter.CTk):
         # Read the files when changing method or files.
         if self.app_status.STATE == VCState.UPDATE_FILE or self.app_status.STATE == VCState.UPDATE_METHOD:
             self.title(self.content_handler.get_title())
-            self.content_handler.load_files(self.content_handler.get_paths())
+            self.content_handler.load_files()
             self.display_handler.mouse_position = (0, 0)
             self.app_status.STATE = VCState.UPDATED
             self.on_pause(paused=False)

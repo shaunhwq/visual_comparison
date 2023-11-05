@@ -1,6 +1,7 @@
+import subprocess
 
 
-__all__ = ["validate_number_str"]
+__all__ = ["validate_number_str", "do_cmd"]
 
 
 def validate_number_str(string, desired_type):
@@ -16,3 +17,11 @@ def validate_number_str(string, desired_type):
         return False, None
 
     return True, value
+
+
+def do_cmd(s_cmd):
+    child = subprocess.Popen(s_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    res = child.communicate()  # stdout stderr include '\n'
+    ret = child.returncode
+
+    return ret, res[0], res[1]
