@@ -1,13 +1,17 @@
 import os
 import cv2
 import glob
+import json
 from typing import List
+
+from .utils import do_cmd
 
 
 __all__ = [
     "get_folders",
     "get_filenames",
     "complete_paths",
+    "get_video_information",
 ]
 
 
@@ -64,3 +68,14 @@ def complete_paths(root, folder, common_names):
         paths.append(glob.glob(uncomplete_path)[0])
 
     return paths
+
+
+def get_video_information(file_path):
+    command = 'ffprobe -print_format json -show_streams -v quiet {}'.format(file_path)
+    retcode, stdout, _ = do_cmd(command)
+    if retcode == 0:
+        obj = json.loads(stdout)
+        if len(obj["streams"]) > 0:
+            return obj["streams"][0]
+
+    return {}
