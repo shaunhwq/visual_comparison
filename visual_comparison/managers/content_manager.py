@@ -2,6 +2,7 @@ import os
 import glob
 from typing import List
 from concurrent.futures import ThreadPoolExecutor
+from itertools import repeat
 
 import cv2
 from tqdm import tqdm
@@ -15,9 +16,13 @@ __all__ = ["ContentManager"]
 
 
 class ContentManager:
-    def __init__(self, root, preview_folder):
+    def __init__(self, root: str, preview_folder: str, require_color_conversion: bool):
+        """
+        :param require_color_conversion: If True, we need to extract metadata information (so we know whether to do correction or change color spaces)
+        """
         self.root = root
         self.preview_folder = preview_folder
+        self.require_color_conversion = require_color_conversion
 
         self.methods = file_utils.get_folders(root, preview_folder)
         self.files = file_utils.get_filenames(root, self.methods)
@@ -30,7 +35,8 @@ class ContentManager:
         self.current_files = list(self.files)
 
         self.metadata = dict()
-        self.get_metadata()
+        if require_color_conversion:
+            self._init_get_metadata()
         self.current_metadata = dict(self.metadata)
 
         # Could use pandas but don't want to introduce dependency
@@ -42,21 +48,36 @@ class ContentManager:
         self.executor = ThreadPoolExecutor(max_workers=4)
 
         # Collect and store file information. Time vs memory trade off. Reduce wait for many files.
-        self.get_data()
+        self._init_get_data()
 
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.executor.shutdown(wait=False)
 
-    def get_data(self):
+    def _init_get_metadata(self):
+        """
+        Called during initialization.
+        Retrieves metadata for all files to compare.
+        """
+        for method in self.methods:
+            method_files = file_utils.complete_paths(self.root, method, self.files)
+            with ThreadPoolExecutor() as executor:
+                self.metadata[method] = list(tqdm(executor.map(get_video_information, method_files), total=len(method_files), desc=f"Loading metadata for {method}..."))
+
+    def _init_get_data(self):
+        """
+        Called during initialization.
+        Retrieves info needed for preview like file information and in self.data_titles info.
+        """
         if not (len(self.methods) > 0 and len(self.files) > 0):
             return
 
         # Load images for preview window. Multi thread for faster reading.
         file_paths = file_utils.complete_paths(self.root, self.preview_folder, self.files)
+        metadata = self.metadata[self.preview_folder] if self.require_color_conversion else repeat(None)
 
         return_values = tqdm(
-            iterable=self.executor.map(self.load_file_info, file_paths, self.metadata[self.preview_folder]),
+            iterable=self.executor.map(self._init_load_file_info, file_paths, metadata),
             desc="Loading file info...",
             total=len(file_paths)
         )
@@ -65,21 +86,8 @@ class ContentManager:
             self.thumbnails.append(thumbnail)
             self.data.append([idx] + data)
 
-    def get_metadata(self):
-        for method in self.methods:
-            method_files = file_utils.complete_paths(self.root, method, self.files)
-            with ThreadPoolExecutor() as executor:
-                self.metadata[method] = list(tqdm(executor.map(get_video_information, method_files), total=len(method_files), desc=f"Loading metadata for {method}..."))
-
-    def set_current_files(self, indices: List[int]):
-        self.current_files = [self.files[i] for i in indices]
-
-        self.current_metadata = {}
-        for method in self.methods:
-            self.current_metadata[method] = list([self.metadata[method][i] for i in indices])
-
     @staticmethod
-    def load_file_info(file_path, metadata, max_height=75):
+    def _init_load_file_info(file_path, metadata, max_height=75):
         cap = file_reader.read_media_file(file_path, metadata)
         ret, img = cap.read()
 
@@ -96,7 +104,7 @@ class ContentManager:
         cap.release()
         return thumbnail, data
 
-    def get_current_paths(self) -> List[str]:
+    def _get_current_paths(self) -> List[str]:
         """
         Get path to files for currently selected methods and files
         :return: List of paths
@@ -111,11 +119,20 @@ class ContentManager:
 
         return output_paths
 
-    def get_current_metadata(self) -> List[dict]:
+    def _get_current_metadata(self) -> List[dict]:
+        if not self.require_color_conversion:
+            return repeat(None)
         metadata = []
         for method in self.current_methods:
             metadata.append(self.current_metadata[method][self.current_index])
         return metadata
+
+    def set_current_files(self, indices: List[int]):
+        self.current_files = [self.files[i] for i in indices]
+
+        self.current_metadata = {}
+        for method in self.methods:
+            self.current_metadata[method] = list([self.metadata[method][i] for i in indices])
 
     def on_prev(self):
         self.current_index = max(0, self.current_index - 1)
@@ -139,16 +156,16 @@ class ContentManager:
         """
         :returns: VideoCapture or ImageCapture object
         """
-        current_paths = self.get_current_paths()
-        current_metadata = self.get_current_metadata()
+        current_paths = self._get_current_paths()
+        current_metadata = self._get_current_metadata()
         return file_reader.read_media_file(current_paths[0], current_metadata[0])
 
     def load_files(self):
         self.content_loaders = []
         self.video_indices = []
 
-        current_paths = self.get_current_paths()
-        current_metadata = self.get_current_metadata()
+        current_paths = self._get_current_paths()
+        current_metadata = self._get_current_metadata()
         for file_idx, (file, metadata) in enumerate(zip(current_paths, current_metadata)):
             cap = file_reader.read_media_file(file, metadata)
             self.content_loaders.append(cap)
@@ -166,8 +183,8 @@ class ContentManager:
         Will be slow when want to adjust frames to position before current idx.
         E.g. current = frame 50, desired = frame 10
         """
-        content_paths = self.get_current_paths()
-        content_metadata = self.get_current_metadata()
+        content_paths = self._get_current_paths()
+        content_metadata = self._get_current_metadata()
 
         def seek_video(vid_idx, no_frames, in_future):
             if not in_future:

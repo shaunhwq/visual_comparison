@@ -131,7 +131,9 @@ class VisualComparisonApp(customtkinter.CTk):
             return False
 
         root_folder, preview_folder = ret_vals
-        content_handler = managers.ContentManager(root=root_folder, preview_folder=preview_folder)
+
+        require_color_conversion = any((self.configurations["Color"]["correct_h264_bt709"],))
+        content_handler = managers.ContentManager(root=root_folder, preview_folder=preview_folder, require_color_conversion=require_color_conversion)
 
         if len(content_handler.methods) <= 1:
             self.display_msg_popup("Root folder must contain more than 1 sub folder")

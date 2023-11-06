@@ -55,6 +55,9 @@ config_info = dict(
         skip_to_10_frame_before=dict(obj="entry", type=str, default="_"),
         skip_to_10_frame_after=dict(obj="entry", type=str, default="+"),
     ),
+    Color=dict(
+        correct_h264_bt709=dict(obj="options", type=bool, values=["true", "false"], default="false")
+    )
 )
 
 
