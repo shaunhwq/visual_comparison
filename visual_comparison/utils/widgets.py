@@ -56,11 +56,11 @@ class ToolTip(object):
         x, y, cx, cy = self.widget.bbox("insert")
         x = x + self.widget.winfo_rootx()
         y = y + cy + self.widget.winfo_rooty()
-        self.tip_window = tw = tkinter.Toplevel(self.widget)
+        self.tip_window = tw = customtkinter.CTkToplevel(self.widget)
         tw.wm_overrideredirect(1)
         tw.wm_geometry("+%d+%d" % (x, y))
-        label = tkinter.Label(tw, text=self.text, justify=tkinter.LEFT, background="#ffffe0", relief=tkinter.SOLID, borderwidth=1, font=("tahoma", "8", "normal"))
-        label.pack(ipadx=1)
+        label = customtkinter.CTkLabel(tw, text=self.text)
+        label.pack(padx=5)
 
     def hidetip(self):
         tw = self.tip_window
