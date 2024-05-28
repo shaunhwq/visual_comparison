@@ -74,7 +74,7 @@ class ContentManager:
 
         # Load images for preview window. Multi thread for faster reading.
         file_paths = file_utils.complete_paths(self.root, self.preview_folder, self.files)
-        metadata = self.metadata[self.preview_folder] if self.require_color_conversion else repeat(None)
+        metadata = self.metadata[self.preview_folder] if self.require_color_conversion else [None] * len(file_paths)
 
         return_values = tqdm(
             iterable=self.executor.map(self._init_load_file_info, file_paths, metadata),
@@ -120,11 +120,10 @@ class ContentManager:
         return output_paths
 
     def _get_current_metadata(self) -> List[dict]:
-        if not self.require_color_conversion:
-            return repeat(None)
         metadata = []
         for method in self.current_methods:
-            metadata.append(self.current_metadata[method][self.current_index])
+            value = None if not self.require_color_conversion else self.current_metadata[method][self.current_index]
+            metadata.append(value)
         return metadata
 
     def set_current_files(self, indices: List[int]):
