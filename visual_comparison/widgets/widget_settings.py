@@ -88,6 +88,9 @@ class SettingsPopupWidget(customtkinter.CTkToplevel):
         self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
+        # Escape key to close popup
+        self.bind("<Escape>", lambda _: self.destroy())
+
     def on_restore_all_to_defaults(self):
         for section in self.configuration_info.keys():
             for key in self.configuration_info[section].keys():
