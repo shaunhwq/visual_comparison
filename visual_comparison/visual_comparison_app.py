@@ -62,6 +62,7 @@ class VisualComparisonApp(customtkinter.CTk):
         cb_callbacks = dict(
             on_prev_file=self.on_prev_file,
             on_search=self.on_specify_index,
+            on_search_grid=self.on_search_grid,
             on_next_file=self.on_next_file,
             on_filter_files=self.on_filter_files,
             on_prev_method=self.on_prev_method,
@@ -146,6 +147,16 @@ class VisualComparisonApp(customtkinter.CTk):
         self.root = root_folder
         self.preview_folder = preview_folder
         return True
+
+    def on_search_grid(self):
+        widgets.SearchGridPopup(
+            images=self.content_handler.thumbnails,
+            width=1000,
+            height=720,
+            callback=self.on_specify_index,
+            default_value=self.configurations["Display"]["search_grid_preview_row_height"],
+        )
+        self.update_idletasks()
 
     def on_change_playback_rate(self, new_rate):
         if new_rate == "Max":

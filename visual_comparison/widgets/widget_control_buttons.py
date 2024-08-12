@@ -17,19 +17,22 @@ class ControlButtonsWidget(customtkinter.CTkFrame):
         button_search = customtkinter.CTkButton(master=frame_00, width=25, height=25, command=callbacks["on_search"], text="", image=icon_manager.search_icon, corner_radius=ctk_corner_radius)
         utils.create_tool_tip(button_search, "Search")
         button_search.grid(row=0, column=1, padx=(0, 2))
+        button_search_grid = customtkinter.CTkButton(master=frame_00, width=25, height=25, command=callbacks["on_search_grid"], text="", image=icon_manager.search_grid_icon, corner_radius=ctk_corner_radius)
+        utils.create_tool_tip(button_search_grid, "Search Grid")
+        button_search_grid.grid(row=0, column=2, padx=(0, 2))
         button_next = customtkinter.CTkButton(master=frame_00, text=">", command=callbacks["on_next_file"], width=30, height=29, corner_radius=ctk_corner_radius)
-        button_next.grid(row=0, column=2, padx=(0, 5))
+        button_next.grid(row=0, column=3, padx=(0, 5))
 
         button_filter = customtkinter.CTkButton(master=frame_00, width=25, height=25, command=callbacks["on_filter_files"], text="", image=icon_manager.filter_icon, corner_radius=ctk_corner_radius)
         utils.create_tool_tip(button_filter, "Filter")
-        button_filter.grid(row=0, column=3, padx=5)
+        button_filter.grid(row=0, column=4, padx=5)
 
         button_prev_method = customtkinter.CTkButton(master=frame_00, text="<", command=callbacks["on_prev_method"], width=30, height=29, corner_radius=ctk_corner_radius)
-        button_prev_method.grid(row=0, column=4, padx=(5, 2))
+        button_prev_method.grid(row=0, column=5, padx=(5, 2))
         button_method = customtkinter.CTkButton(master=frame_00, text="Method:", command=callbacks["on_select_methods"], width=50, height=29, corner_radius=ctk_corner_radius)
-        button_method.grid(row=0, column=5, padx=(0, 2))
+        button_method.grid(row=0, column=6, padx=(0, 2))
         button_next_method = customtkinter.CTkButton(master=frame_00, text=">", command=callbacks["on_next_method"], width=30, height=29, corner_radius=ctk_corner_radius)
-        button_next_method.grid(row=0, column=6, padx=(0, 5))
+        button_next_method.grid(row=0, column=7, padx=(0, 5))
 
         frame_00.grid(row=0, column=0, padx=10)
 

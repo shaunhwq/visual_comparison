@@ -32,6 +32,7 @@ config_info = dict(
         interpolation_type=dict(obj="options", type=eval, values=DISPLAY_INTERPOLATION_TYPES, default="cv2.INTER_LINEAR"),
         fast_loading_threshold_ms=dict(obj="entry", type=int, default=100),
         ctk_corner_radius=dict(obj="entry", type=int, default=3),
+        search_grid_preview_row_height=dict(obj="options", type=int, values=["75", "100", "125"], default="75")
     ),
     Zoom=dict(
         interpolation_type=dict(obj="options", type=eval, values=ZOOM_INTERPOLATION_TYPES, default="cv2.INTER_NEAREST"),

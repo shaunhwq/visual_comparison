@@ -17,6 +17,7 @@ class IconManager:
         self.settings_icon = self.load_ctk_image("settings_icon.png")
         self.filter_icon = self.load_ctk_image("filter_icon.png")
         self.search_icon = self.load_ctk_image("search_icon.png")
+        self.search_grid_icon = self.load_ctk_image("search_grid_icon.png")
 
     def load_ctk_image(self, image_name: str) -> customtkinter.CTkImage:
         image_path = os.path.join(self.icon_assets_path, image_name)
