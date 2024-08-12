@@ -75,6 +75,9 @@ class MultiSelectPopUpWidget(customtkinter.CTkToplevel):
         self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
+        # Escape key to close popup
+        self.bind("<Escape>", lambda _: self.destroy())
+
     def _on_checkbox_checked(self):
         new_list = [checkbox for checkbox in self.checkboxes if checkbox.get()]
         remaining = [checkbox for checkbox in self.checkboxes if not checkbox.get()]
@@ -148,6 +151,9 @@ class FilterRangePopup(customtkinter.CTkToplevel):
         self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
+        # Escape key to close popup
+        self.bind("<Escape>", lambda _: self.destroy())
+
     def on_ok_pressed(self, tab):
         if tab == "Range":
             l_ret, lower_val = validate_number_str(self.lower_text_box.get(), desired_type=float)
@@ -206,6 +212,9 @@ class FilterTextPopup(customtkinter.CTkToplevel):
         self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
+        # Escape key to close popup
+        self.bind("<Escape>", lambda _: self.destroy())
+
     def on_confirm(self):
         condition = self.condition_combo_box.get()
         text = self.entry_box.get()
@@ -261,6 +270,9 @@ class DataSelectionPopup(customtkinter.CTkToplevel):
         self.update_idletasks()
         self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
+        # Escape key to close popup
+        self.bind("<Escape>", lambda _: self.destroy())
 
     def filter_options(self, column):
         column_index = self.column_titles.index(column)
@@ -342,7 +354,7 @@ class SearchDataPopup(customtkinter.CTkToplevel):
         search_tab = tabview.tab("Prefix")
         search_label = customtkinter.CTkLabel(search_tab, text="Prefix: ")
         search_label.grid(row=0, column=0, pady=5, padx=20)
-        self.search_entry_field = customtkinter.CTkEntry(search_tab, textvariable=entry_var, corner_radius=ctk_corner_radius, width=text_width, placeholder_text="File Path")
+        self.search_entry_field = customtkinter.CTkEntry(search_tab, textvariable=entry_var, corner_radius=ctk_corner_radius, width=text_width, placeholder_text="File Path (Press tab to complete word)")
         self.search_entry_field.bind("<Tab>", self.on_tab_completion)
         self.search_entry_field.grid(row=0, column=1, pady=5, padx=(0, 20))
         jump_to_idx_button = customtkinter.CTkButton(search_tab, width=75, height=25, command=self.on_search_button, corner_radius=ctk_corner_radius, text="Show Item")
@@ -354,6 +366,9 @@ class SearchDataPopup(customtkinter.CTkToplevel):
         self.update_idletasks()
         self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
+        # Escape key to close popup
+        self.bind("<Escape>", lambda _: self.destroy())
 
     def _unbind_entry_tab_pressed(self):
         def custom_tab(event):
@@ -436,6 +451,9 @@ class MessageBoxPopup(customtkinter.CTkToplevel):
         self.update_idletasks()
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
+        # Escape key to close popup
+        self.bind("<Escape>", lambda _: self.destroy())
+
     def _on_lose_focus(self, event):
         self.destroy()
 
@@ -477,6 +495,9 @@ class GetNumberBetweenRangePopup(customtkinter.CTkToplevel):
         self.update_idletasks()
         self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
+        # Escape key to close popup
+        self.bind("<Escape>", lambda _: self.destroy())
 
     def on_confirm(self):
         user_input = self.entry.get()
@@ -544,6 +565,9 @@ class RootSelectionPopup(customtkinter.CTkToplevel):
             self.create_popup(f"Specified folder '{selected_folder}' without specifying root. Ignoring...")
         if root is not None:
             self.on_select_clicked(root, selected_folder)
+
+        # Escape key to close popup
+        self.bind("<Escape>", lambda _: self.destroy())
 
     def on_select_clicked(self, desired_dir=None, selected_folder=None):
         # Get desired directory
@@ -669,6 +693,9 @@ class ExportVideoPopup(customtkinter.CTkToplevel):
         self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
 
+        # Escape key to close popup
+        self.bind("<Escape>", lambda _: self.destroy())
+
     def on_export_options_changed(self, value):
         if value == "Custom":
             self.checkbox_options_frame.grid(row=5, column=1, padx=10)
@@ -732,6 +759,9 @@ class ExportSelectionPopup(customtkinter.CTkToplevel):
         self.update_idletasks()
         self.grab_set()  # make other windows not clickable
         shift_widget_to_root_center(parent_widget=self.master, child_widget=self)
+
+        # Escape key to close popup
+        self.bind("<Escape>", lambda _: self.destroy())
 
     def on_confirm(self):
         self.cancelled = False
