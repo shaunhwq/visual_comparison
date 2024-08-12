@@ -354,7 +354,7 @@ class SearchDataPopup(customtkinter.CTkToplevel):
         search_tab = tabview.tab("Prefix")
         search_label = customtkinter.CTkLabel(search_tab, text="Prefix: ")
         search_label.grid(row=0, column=0, pady=5, padx=20)
-        self.search_entry_field = customtkinter.CTkEntry(search_tab, textvariable=entry_var, corner_radius=ctk_corner_radius, width=text_width, placeholder_text="File Path")
+        self.search_entry_field = customtkinter.CTkEntry(search_tab, textvariable=entry_var, corner_radius=ctk_corner_radius, width=text_width, placeholder_text="File Path (Press tab to complete word)")
         self.search_entry_field.bind("<Tab>", self.on_tab_completion)
         self.search_entry_field.grid(row=0, column=1, pady=5, padx=(0, 20))
         jump_to_idx_button = customtkinter.CTkButton(search_tab, width=75, height=25, command=self.on_search_button, corner_radius=ctk_corner_radius, text="Show Item")
